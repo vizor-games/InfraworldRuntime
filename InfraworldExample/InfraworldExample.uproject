@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{367C9F98-4270-33BD-4B6B-16977083BE7F}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "InfraworldExample",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

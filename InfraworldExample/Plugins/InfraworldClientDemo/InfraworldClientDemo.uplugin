@@ -1,0 +1,30 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "1.0",
+  "FriendlyName": "InfraworldClientDemo",
+  "Description": "",
+  "Category": "Other",
+  "CreatedBy": "Nikita Miroshnichenko",
+  "CreatedByURL": "",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "CanContainContent": true,
+  "IsBetaVersion": false,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "InfraworldClientDemo",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault"
+    }
+  ],
+  "Plugins": 
+  [
+    {
+      "Name": "InfraworldRuntime",
+      "Enabled": true
+    }
+  ]
+}

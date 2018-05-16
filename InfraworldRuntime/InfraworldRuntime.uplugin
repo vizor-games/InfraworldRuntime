@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Infraworld Runtime",
+	"Description": "Infraworld is a solution that enables Unreal Engine 4 to work with Google gRPC services from either C++ or Blueprints",
+	"Category": "Networking",
+	"CreatedBy": "Vizor Games LLC",
+	"CreatedByURL": "http://vizor-interactive.com/en/",
+	"DocsURL": "http://vizor-interactive.com/en/",
+	"MarketplaceURL": "",
+	"SupportURL": "mailto:roman.chehowski@vizor-games.com",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "InfraworldRuntime",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault"
+		}
+	]
+}
