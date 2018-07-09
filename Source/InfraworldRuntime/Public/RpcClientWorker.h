@@ -56,7 +56,9 @@ public:
     void DispatchError(const FString& ErrorMessage);
 
 //public:
-    FRpcClientInstantiationParameters DispatcherParameters;
+    FString URI;
+    UChannelCredentials* ChannelCredentials;
+    
     TQueue<FRpcError>* ErrorMessageQueue;
 
 private:

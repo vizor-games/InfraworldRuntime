@@ -43,7 +43,7 @@ class INFRAWORLDRUNTIME_API URpcClient : public UObject
 {
 	GENERATED_BODY()
 
-    bool Init(const FRpcClientInstantiationParameters& StartupParameters);
+    bool Init(const FString& URI, UChannelCredentials* ChannelCredentials);
 
 public:
 	URpcClient();
@@ -88,17 +88,34 @@ public:
      * Instantiates a new RPC Dispatcher. You should use this function, not 'Construct Object from Class', to properly initialize the instance.
      *
      * @param Class
-     *        A subclass of RPC Client, that will be instantiated.
-     *        Please don't select an abstract 'Rpc Client'
+     *        A subclass of RPC Client, that will be instantiated. Please don't select an abstract 'Rpc Client'.
      * @param InstantiationParameters
      *        Parameters, will be used for instantiation,
      * @param Outer
-     *        An outer object, None (or empty) is valid as well, if so,
-     *        GetTransientPackage() will be used to retrieve a static outer.
+     *        An outer object, None (or empty) is valid as well, if so, GetTransientPackage() will be used to retrieve a static outer.
+     * @return A newly created instance of RPC Client.
+     */
+    UFUNCTION(BlueprintCallable, BlueprintCosmetic, Category="Vizor|RPC Client", meta=(DisplayName="Create RPC Client", DeterminesOutputType="Class", DeprecatedFunction, DeprecationMessage="Use function, accepting URI and ChannelCredentials instead"))
+    static URpcClient* CreateRpcClient(TSubclassOf<URpcClient> Class, FRpcClientInstantiationParameters InstantiationParameters, UObject* Outer = nullptr);
+    
+    /**
+     * Instantiates a new RPC Dispatcher. You should use this function, not 'Construct Object from Class', to properly initialize the instance.
+     *
+     * @param Class
+     *        A subclass of RPC Client, that will be instantiated. Please don't select an abstract 'Rpc Client'.
+     * @param URI
+     *        Endpoint URI, will be used to establish connection.
+     *        Must not start with 'http://' or 'https://' or any URL scheme.
+     *        Must not have URL path, such as 'www.hello.eu/paths/are/not/allowed'
+     *        Must be either a domain name or an IP address with or without an explicit port. 80'th port is used by default.
+     * @param ChannelCredentials
+     *        Credentials to use for the created RPC client.
+     * @param Outer
+     *        An outer object, None (or empty) is valid as well, if so, GetTransientPackage() will be used to retrieve a static outer.
      * @return A newly created instance of RPC Client.
      */
     UFUNCTION(BlueprintCallable, BlueprintCosmetic, Category="Vizor|RPC Client", meta=(DisplayName="Create RPC Client", DeterminesOutputType="Class"))
-    static URpcClient* CreateRpcClient(TSubclassOf<URpcClient> Class, FRpcClientInstantiationParameters InstantiationParameters, UObject* Outer = nullptr);
+    static URpcClient* CreateRpcClientUri(TSubclassOf<URpcClient> Class, const FString& URI, UChannelCredentials* ChannelCredentials, UObject* Outer = nullptr);
 
     /**
      * Called when did received any kind of error.
@@ -122,18 +139,10 @@ private:
 };
 
 template <class T>
-FORCEINLINE T* NewRpcClient(const FRpcClientInstantiationParameters& InstantiationParameters, UObject* Outer = nullptr)
+FORCEINLINE T* NewRpcClient(const FString& URI, UChannelCredentials* ChannelCredentials, UObject* Outer = nullptr)
 {
     static_assert(TIsDerivedFrom<T, URpcClient>::IsDerived, "T must derive URpcClient");
     static_assert(!TIsSame<T, URpcClient>::Value, "T must derive URpcClient, but mustn't be a bare URpcClient");
 
-    if (T* const Result = Cast<T>(URpcClient::CreateRpcClient(T::StaticClass(), InstantiationParameters, Outer)))
-    {
-        return Result;
-    }
-    else
-    {
-        UE_LOG(LogTemp, Fatal, TEXT("Can not create RPC Client. Instantiation error."));
-        return nullptr;
-    }
+    return Cast<T>(URpcClient::CreateRpcClientUri(T::StaticClass(), URI, ChannelCredentials, Outer));
 }

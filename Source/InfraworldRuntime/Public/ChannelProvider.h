@@ -102,28 +102,25 @@ namespace channel
 
     std::shared_ptr<grpc::Channel> CreateChannel(RpcClientWorker* Worker)
     {
-        UChannelCredentials* const ChannelCredentials = Worker->DispatcherParameters.ChannelCredentials;
+        UChannelCredentials* const ChannelCredentials = Worker->ChannelCredentials;
         UE_CLOG(!ChannelCredentials, LogTemp, Fatal, TEXT("Channel Credentials mustn't be null"));
 
-        const FString& ChannelAddess = Worker->DispatcherParameters.GetURI();
-        UE_LOG(LogTemp, Display, TEXT("The following Channel Credentials is used: %s. Connecting to: %s"), *(ChannelCredentials->GetName()), *ChannelAddess);
-
-        //std::shared_ptr<grpc::Channel> Channel = grpc::CreateChannel(TCHAR_TO_UTF8(*ChannelAddess), UChannelCredentials::GetGrpcCredentials(ChannelCredentials));
+        const FString& URI = Worker->URI;
+        UE_LOG(LogTemp, Display, TEXT("The following Channel Credentials is used: \"%s\". Connecting to: \"%s\""), *(ChannelCredentials->GetName()), *URI);
 
         std::shared_ptr<grpc::ChannelCredentials> GrpcCredentials = GetGrpcCredentials(ChannelCredentials);
-        std::shared_ptr<grpc::Channel> Channel = grpc::CreateChannel(TCHAR_TO_ANSI(*ChannelAddess), GrpcCredentials);
+        std::shared_ptr<grpc::Channel> Channel = grpc::CreateChannel(TCHAR_TO_ANSI(*URI), GrpcCredentials);
 
-        bool b = WaitForConnection(3, Channel);
-        UE_LOG(LogTemp, Display, TEXT(""));
+        bool bConnectionWasSuccessful = WaitForConnection(3, Channel);
 
-        if (!b)
+        if (!bConnectionWasSuccessful)
         {
             Worker->DispatchError(TEXT("Connection failure"));
             return std::shared_ptr<grpc::Channel>(nullptr);
         }
         else
         {
-            UE_LOG(LogTemp, Display, TEXT("Connection established!"));
+            UE_LOG(LogTemp, Verbose, TEXT("Connection established!"));
         }
 
         return Channel;

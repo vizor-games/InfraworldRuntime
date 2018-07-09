@@ -16,88 +16,27 @@
 #include "InfraworldRuntime.h"
 
 #include "RpcClient.h"
-
 #include "RpcClientWorker.h"
+#include "GrpcUriValidator.h"
+
 #include "DefaultValueHelper.h"
 #include "RunnableThread.h"
-
 #include "Kismet/KismetStringLibrary.h"
-
-// ===== Limited-accessible C++ only functions =====
-
-bool CheckIp(const FString& Ip)
-{
-    const int32 NumOctets = 4;
-
-    TArray<FString> ParsedOctets;
-    ParsedOctets.Reserve(NumOctets);
-    Ip.ParseIntoArray(ParsedOctets, TEXT("."));
-
-    int32 parsedOctetdsNum = ParsedOctets.Num();
-
-    if (parsedOctetdsNum == NumOctets)
-    {
-        const TRange<int32> OctetRange(0, 256);
-
-        for (int32 i = 0; i < ParsedOctets.Num(); ++i)
-        {
-            const FString& Octet = ParsedOctets[i];
-            int32 Out = -1;
-
-            if (FDefaultValueHelper::ParseInt(Octet, Out))
-            {
-                if (!OctetRange.Contains(Out))
-                {
-                    UE_LOG(LogTemp, Error, TEXT("An %d'th octet (which is '%s') in the IPv4 address (which is '%s') is of range [0 - 256)"), i + 1, *Octet, *Ip);
-                    return false;
-                }
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("'%s' in '%s' does not seems to be int32"), *Octet, *Ip);
-                return false;
-            }
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Fatal, TEXT("Can not parse IPv4 address (which is '%s') into TArray<FString>, or invalid number of octets"), *Ip);
-        return false;
-    }
-
-    return true;
-}
-
 
 // ============ RpcClient implementation ===========
 
-bool URpcClient::Init(const FRpcClientInstantiationParameters& StartupParameters)
+bool URpcClient::Init(const FString& URI, UChannelCredentials* ChannelCredentials)
 {
     if (bCanSendRequests)
     {
         UE_LOG(LogTemp, Error, TEXT("You're trying to initialize an RPC Client more than once"));
         return true;
     }
-
-    // Note that the range [0, 65536) is upper-exclusive!
-    const TRange<int32> ValidPortsRange(0, 65536);
-
-    if (!CheckIp(StartupParameters.Ip))
+    
+    FString ErrorMessage;
+    if (!FGrpcUriValidator::Validate(URI, ErrorMessage))
     {
-        UE_LOG(LogTemp, Error, TEXT("'%s' initialization failture: '%s' doesn't seem to be correct IPv4 address"),
-               *(GetClass()->GetName()),
-               *(StartupParameters.Ip)
-               );
-        return false;
-    }
-
-    if (!ValidPortsRange.Contains(StartupParameters.Port))
-    {
-        UE_LOG(LogTemp, Error, TEXT("'%s' initialization failture: '%d' does'nt seem to be correct port"),
-               *(GetClass()->GetName()),
-               StartupParameters.Port
-               );
-        return false;
+        UE_LOG(LogTemp, Error, TEXT("%s Unable to validate URI: %s"), *(GetClass()->GetName()), *ErrorMessage);
     }
 
     // Do it if and only if the thread is not yet created.
@@ -106,7 +45,8 @@ bool URpcClient::Init(const FRpcClientInstantiationParameters& StartupParameters
         // Launch 'chaining' hierarchical init, which will init a superclass (a concrete implementation).
         HierarchicalInit();
 
-        InnerWorker->DispatcherParameters = StartupParameters;
+        InnerWorker->URI = URI;
+        InnerWorker->ChannelCredentials = ChannelCredentials;
 
         // Retrieve and set an Error Message Queue
         if (InnerWorker)
@@ -167,11 +107,17 @@ bool URpcClient::CanSendRequests() const
 
 URpcClient* URpcClient::CreateRpcClient(TSubclassOf<URpcClient> Class, FRpcClientInstantiationParameters InstantiationParameters, UObject* Outer)
 {
-    UObject* const RealOuter = Outer ? Outer : (UObject*)GetTransientPackage();
+    const FString& URI = FString::Printf(TEXT("%s:%d"), *(InstantiationParameters.Ip), InstantiationParameters.Port);
+    return CreateRpcClientUri(Class, URI, InstantiationParameters.ChannelCredentials, Outer);
+}
 
+URpcClient* URpcClient::CreateRpcClientUri(TSubclassOf<URpcClient> Class, const FString& URI, UChannelCredentials* ChannelCredentials, UObject* Outer)
+{
+    UObject* const RealOuter = Outer ? Outer : (UObject*)GetTransientPackage();
+    
     if (URpcClient* const CreatedClient = NewObject<URpcClient>(RealOuter, *Class))
     {
-        bool IsClientInitialized = CreatedClient->Init(InstantiationParameters);
+        bool IsClientInitialized = CreatedClient->Init(URI, ChannelCredentials);
         if (!IsClientInitialized)
         {
             UE_LOG(LogTemp, Error, TEXT("Unable to initialize an RPC client (%s::Init() failed"), *(Class->GetName()));
