@@ -141,8 +141,10 @@ namespace casts
         // Each item shall be individually casted to OutT
         for (const InT& Item : Array)
         {
-            auto cast_result = Proto_Cast<OutT>(Item);
-            OutArray.AddAllocated(&cast_result);
+            const OutT& cast_result = Proto_Cast<OutT>(Item);
+            
+            // We need to create a new instance of OutT to be posessed by the OutArray.
+            OutArray.AddAllocated(new OutT(cast_result));
         }
 
         return OutArray;
@@ -175,14 +177,11 @@ namespace casts
     template <>
     FORCEINLINE FByteArray Proto_Cast(const std::string& String)
     {
-        // Allocate a TArray<uint8> and reserve capacity.
+        // Allocate a TArray<uint8>
         TArray<uint8> OutArray;
-        OutArray.Reserve((int32)String.size());
-
-        // Then put all data (each char shall be casted to char)
-        std::for_each(String.cbegin(), String.cend(), [&OutArray](char Item) {
-            OutArray.Add(static_cast<char>(Item));
-        });
+        
+        // Put String's content into the array. We can not (and do not need) to cast away const qualifier.
+        OutArray.Insert(reinterpret_cast<const uint8*>(String.c_str()), String.size(), 0);
 
         // Finally, wrap all data into FByteArray
         return FByteArray(OutArray);
