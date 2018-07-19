@@ -14,14 +14,15 @@ VAR_CLEAR_REPO=$clean
 REMOTE_ORIGIN="https://github.com/grpc/grpc.git"
 GOSUPPORT_REMOTE_ORIGIN="https://github.com/golang/protobuf.git"
 
-SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 GRPC_FOLDER_NAME=grpc
-GRPC_ROOT=$SCRIPT_DIR/$GRPC_FOLDER_NAME
+GRPC_ROOT="${SCRIPT_DIR}/${GRPC_FOLDER_NAME}"
 
 DEPS=(git automake autoconf libtool make strip clang++ go)
 ###############################################################################
 
-echo "Script dir: ${SCRIPT_DIR}"
+echo "SCRIPT_DIR=${SCRIPT_DIR}"
+echo "GRPC_ROOT=${GRPC_ROOT}"
 
 # Check if all tools are installed
 for i in ${DEPS[@]}; do
@@ -41,7 +42,7 @@ if [ ! -d "$GRPC_ROOT" ]; then
     echo "Cloning repo into ${GRPC_ROOT}"
     git clone $REMOTE_ORIGIN $GRPC_ROOT
 else
-    [[ ${VAR_CLEAR_REPO} ]] && cd $GRPC_ROOT && git merge --abort || true; git clean -fdx && git checkout -f .
+    # [[ ${VAR_CLEAR_REPO} ]] && cd $GRPC_ROOT && git merge --abort || true; git clean -fdx && git checkout -f .
     echo "Pulling repo"
     (cd $GRPC_ROOT && git pull)
 fi
@@ -69,8 +70,7 @@ fi
 # Copy INCLUDE folders, should copy:
 #   - grpc/include
 #   - grpc/third_party/protobuf/src
-ARTIFACTS_DIR="${SCRIPT_DIR}"
-HEADERS_DIR="${ARTIFACTS_DIR}/GrpcIncludes"
+HEADERS_DIR="${SCRIPT_DIR}/GrpcIncludes"
 PROTOBUF_SRC_DIR="${HEADERS_DIR}/third_party/protobuf"
 
 # (re)-create headers directory
@@ -87,6 +87,8 @@ cp -R "${GRPC_ROOT}/third_party/protobuf/src" $PROTOBUF_SRC_DIR
 
 # # Build protobuf
 PROTOBUF_ROOT=$GRPC_ROOT/third_party/protobuf
+echo "PROTOBUF_ROOT=${PROTOBUF_ROOT}"
+
 (cd $PROTOBUF_ROOT && ./autogen.sh)
 (cd $PROTOBUF_ROOT && ./configure --disable-shared) # --disable-shared makes protoc static
 (cd $PROTOBUF_ROOT && make)
@@ -100,8 +102,8 @@ export CXXFLAGS="-I${PROTOBUF_ROOT}/src"
 (cd $GRPC_ROOT && make static)
 
 # Copy artifacts
-LIBS_DIR="${ARTIFACTS_DIR}/GrpcLibraries"
-BIN_DIR="${ARTIFACTS_DIR}/GrpcPrograms"
+LIBS_DIR="${SCRIPT_DIR}/GrpcLibraries"
+BIN_DIR="${SCRIPT_DIR}/GrpcPrograms"
 
 if [ $(uname) != 'Darwin' ]; then
     ARCH_LIBS_DIR="${LIBS_DIR}/"$(uname)
@@ -120,12 +122,12 @@ SRC_LIBS_FOLDER_PROTOBUF=$PROTOBUF_ROOT/src/.libs
 # Force recursively copy
 if [ -d "$SRC_LIBS_FOLDER_PROTOBUF" ]; then
     echo "Copying protobuf libraries from ${SRC_LIBS_FOLDER_PROTOBUF} to ${ARCH_LIBS_DIR}"
-    (cd $SRC_LIBS_FOLDER_PROTOBUF && find . -name '*.a' -exec cp -vnif '{}' $ARCH_LIBS_DIR ";")
+    (cd $SRC_LIBS_FOLDER_PROTOBUF && find . -name '*.a' -exec cp -vf '{}' $ARCH_LIBS_DIR ";")
 fi
 
 if [ -d "$SRC_LIBS_FOLDER_GRPC" ]; then
     echo "Copying grpc libraries from ${SRC_LIBS_FOLDER_GRPC} to ${ARCH_LIBS_DIR}"
-    (cd $SRC_LIBS_FOLDER_GRPC && find . -name '*.a' -exec cp -vnif '{}' $ARCH_LIBS_DIR ";")
+    (cd $SRC_LIBS_FOLDER_GRPC && find . -name '*.a' -exec cp -vf '{}' $ARCH_LIBS_DIR ";")
 fi
 
 # Strip all symbols from libraries
