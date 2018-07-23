@@ -14,14 +14,22 @@ VAR_CLEAR_REPO=$clean
 REMOTE_ORIGIN="https://github.com/grpc/grpc.git"
 GOSUPPORT_REMOTE_ORIGIN="https://github.com/golang/protobuf.git"
 
-SCRIPT_DIR=$(dirname "$0")
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 GRPC_FOLDER_NAME=grpc
-GRPC_ROOT=$SCRIPT_DIR/$GRPC_FOLDER_NAME
+GRPC_ROOT="${SCRIPT_DIR}/${GRPC_FOLDER_NAME}"
 
 DEPS=(git automake autoconf libtool make strip clang++ go)
+
+# Linux needs an existing UE installation
+UE_ROOT=${UE_ROOT:-"/var/lib/jenkins/workspace/Build_UE_Linux"}
+if [ ! -d "$UE_ROOT" ]; then
+    echo "UE_ROOT directory ${UE_ROOT} does not exist, please set correct UE_ROOT"
+    exit 1
+fi;
 ###############################################################################
 
-echo "Script dir: ${SCRIPT_DIR}"
+echo "SCRIPT_DIR=${SCRIPT_DIR}"
+echo "GRPC_ROOT=${GRPC_ROOT}"
 
 # Check if all tools are installed
 for i in ${DEPS[@]}; do
@@ -41,7 +49,7 @@ if [ ! -d "$GRPC_ROOT" ]; then
     echo "Cloning repo into ${GRPC_ROOT}"
     git clone $REMOTE_ORIGIN $GRPC_ROOT
 else
-    [[ ${VAR_CLEAR_REPO} ]] && cd $GRPC_ROOT && git merge --abort || true; git clean -fdx && git checkout -f .
+    # [[ ${VAR_CLEAR_REPO} ]] && cd $GRPC_ROOT && git merge --abort || true; git clean -fdx && git checkout -f .
     echo "Pulling repo"
     (cd $GRPC_ROOT && git pull)
 fi
@@ -69,8 +77,7 @@ fi
 # Copy INCLUDE folders, should copy:
 #   - grpc/include
 #   - grpc/third_party/protobuf/src
-ARTIFACTS_DIR="${SCRIPT_DIR}"
-HEADERS_DIR="${ARTIFACTS_DIR}/GrpcIncludes"
+HEADERS_DIR="${SCRIPT_DIR}/GrpcIncludes"
 PROTOBUF_SRC_DIR="${HEADERS_DIR}/third_party/protobuf"
 
 # (re)-create headers directory
@@ -85,34 +92,61 @@ mkdir -p $PROTOBUF_SRC_DIR
 cp -R "${GRPC_ROOT}/include" $HEADERS_DIR
 cp -R "${GRPC_ROOT}/third_party/protobuf/src" $PROTOBUF_SRC_DIR
 
-# # Build protobuf
-PROTOBUF_ROOT=$GRPC_ROOT/third_party/protobuf
-(cd $PROTOBUF_ROOT && ./autogen.sh)
-(cd $PROTOBUF_ROOT && ./configure --disable-shared) # --disable-shared makes protoc static
-(cd $PROTOBUF_ROOT && make)
-
 # Export vars (don't know why, but grpc's Makefile does not export therse variables)
 export PATH=$PROTOBUF_ROOT/src:$PATH
 export LDFLAGS="-L${PROTOBUF_ROOT}/src/.libs -lprotobuf"
 export CXXFLAGS="-I${PROTOBUF_ROOT}/src"
 
+# Compute arch string using uname
+UNAME_MACH=$(echo $(uname -m) | tr '[:upper:]' '[:lower:]')
+UNAME_OS=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
+UNAME_ARCH="${UNAME_MACH}-unknown-${UNAME_OS}-gnu"
+
+# Export vars (don't know why, but grpc's Makefile does not export therse variables)
+# -Wno-expansion-to-defined to gentoo's clang
+# -Wno-unknown-warning-option - to discard unknown -Wno-expansion-to-defined
+export CFLAGS="-fPIC -Wno-error"
+export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-error -I${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include -I${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include/c++/v1"
+export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH}"
+export LDLIBS="-lc++ -lc++abi"
+export PROTOBUF_LDFLAGS_EXTRA="${LDFLAGS} ${LDLIBS}"
+
+echo "CFLAGS=${CFLAGS}, CXXFLAGS=${CXXFLAGS}, LDFLAGS=${LDFLAGS}, LDLIBS=${LDLIBS}, PROTOBUF_LDFLAGS_EXTRA=${PROTOBUF_LDFLAGS_EXTRA}"
+
 # Build GRPC
-(cd $GRPC_ROOT && make static)
+(cd $GRPC_ROOT && make C=clang CXX=clang++)
 
 # Copy artifacts
-LIBS_DIR="${ARTIFACTS_DIR}/GrpcLibraries"
-BIN_DIR="${ARTIFACTS_DIR}/GrpcPrograms"
+LIBS_DIR="${SCRIPT_DIR}/GrpcLibraries"
+BIN_DIR="${SCRIPT_DIR}/GrpcPrograms"
+
+echo "LIBS_DIR is ${LIBS_DIR}"
+echo "BIN_DIR is ${BIN_DIR}"
 
 if [ $(uname) != 'Darwin' ]; then
     ARCH_LIBS_DIR="${LIBS_DIR}/"$(uname)
+    ARCH_BIN_DIR="${BIN_DIR}/"$(uname)
 else
     ARCH_LIBS_DIR="${LIBS_DIR}/Mac"
+    ARCH_BIN_DIR="${BIN_DIR}/Mac"
 fi
 
 echo "ARCH_LIBS_DIR is ${ARCH_LIBS_DIR}"
+echo "ARCH_BIN_DIR is ${ARCH_BIN_DIR}"
+
+# Remove old libs and binaries directories
+if [ -d "$ARCH_LIBS_DIR" ]; then
+    printf '%s\n' "Removing old $ARCH_LIBS_DIR"
+    rm -rf "$ARCH_LIBS_DIR"
+fi
+if [ -d "$ARCH_BIN_DIR" ]; then
+    printf '%s\n' "Removing old $ARCH_BIN_DIR"
+    rm -rf "$ARCH_BIN_DIR"
+fi
 
 # Create platform-specific artifacts directory
 mkdir -p $ARCH_LIBS_DIR
+mkdir -p $ARCH_BIN_DIR
 
 SRC_LIBS_FOLDER_GRPC=$GRPC_ROOT/libs/opt
 SRC_LIBS_FOLDER_PROTOBUF=$PROTOBUF_ROOT/src/.libs
@@ -120,24 +154,24 @@ SRC_LIBS_FOLDER_PROTOBUF=$PROTOBUF_ROOT/src/.libs
 # Force recursively copy
 if [ -d "$SRC_LIBS_FOLDER_PROTOBUF" ]; then
     echo "Copying protobuf libraries from ${SRC_LIBS_FOLDER_PROTOBUF} to ${ARCH_LIBS_DIR}"
-    (cd $SRC_LIBS_FOLDER_PROTOBUF && find . -name '*.a' -exec cp -vnif '{}' $ARCH_LIBS_DIR ";")
+    (cd $SRC_LIBS_FOLDER_PROTOBUF && find . -name '*.a' -exec cp -vf '{}' $ARCH_LIBS_DIR ";")
 fi
 
 if [ -d "$SRC_LIBS_FOLDER_GRPC" ]; then
     echo "Copying grpc libraries from ${SRC_LIBS_FOLDER_GRPC} to ${ARCH_LIBS_DIR}"
-    (cd $SRC_LIBS_FOLDER_GRPC && find . -name '*.a' -exec cp -vnif '{}' $ARCH_LIBS_DIR ";")
+    (cd $SRC_LIBS_FOLDER_GRPC && find . -name '*.a' -exec cp -vf '{}' $ARCH_LIBS_DIR ";")
 fi
 
 # Strip all symbols from libraries
 (cd $ARCH_LIBS_DIR && strip -S *.a)
 
 # Copy binaries (plugins & protoc)
-echo "Copying executables to ${BIN_DIR}"
-(cp -a "${GRPC_ROOT}/bins/opt/." $BIN_DIR)
-(cp "${PROTOBUF_ROOT}/src/protoc" $BIN_DIR)
+echo "Copying executables to ${ARCH_BIN_DIR}"
+(cp -a "${GRPC_ROOT}/bins/opt/." $ARCH_BIN_DIR)
+(cp "${PROTOBUF_ROOT}/src/protoc" $ARCH_BIN_DIR)
 
 # This seems to be a hack, should modify (cp -a "${GRPC_ROOT}/bins/opt/." $BIN_DIR) to copy only files, bot dirs
-(cd $BIN_DIR && rm -rf protobuf)
+(cd $ARCH_BIN_DIR && rm -rf protobuf)
 
 #
 # Build go support
@@ -157,10 +191,10 @@ export GOPATH=$GOROOT_DIR
 #
 # Run go build
 (cd "${GOPROTO_DIR}/protoc-gen-go" && go build)
-(cp "${GOPROTO_DIR}/protoc-gen-go/protoc-gen-go" $BIN_DIR)
+(cp "${GOPROTO_DIR}/protoc-gen-go/protoc-gen-go" $ARCH_BIN_DIR)
 
 # Finally, strip binaries (programs)
-(cd $BIN_DIR && strip -S *)
+(cd $ARCH_BIN_DIR && strip -S *)
 
 # Copy source
 echo 'BUILD DONE!'

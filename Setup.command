@@ -105,16 +105,33 @@ export CXXFLAGS="-I${PROTOBUF_ROOT}/src"
 LIBS_DIR="${SCRIPT_DIR}/GrpcLibraries"
 BIN_DIR="${SCRIPT_DIR}/GrpcPrograms"
 
+echo "LIBS_DIR is ${LIBS_DIR}"
+echo "BIN_DIR is ${BIN_DIR}"
+
 if [ $(uname) != 'Darwin' ]; then
     ARCH_LIBS_DIR="${LIBS_DIR}/"$(uname)
+    ARCH_BIN_DIR="${BIN_DIR}/"$(uname)
 else
     ARCH_LIBS_DIR="${LIBS_DIR}/Mac"
+    ARCH_BIN_DIR="${BIN_DIR}/Mac"
 fi
 
 echo "ARCH_LIBS_DIR is ${ARCH_LIBS_DIR}"
+echo "ARCH_BIN_DIR is ${ARCH_BIN_DIR}"
+
+# Remove old libs and binaries directories
+if [ -d "$ARCH_LIBS_DIR" ]; then
+    printf '%s\n' "Removing old $ARCH_LIBS_DIR"
+    rm -rf "$ARCH_LIBS_DIR"
+fi
+if [ -d "$ARCH_BIN_DIR" ]; then
+    printf '%s\n' "Removing old $ARCH_BIN_DIR"
+    rm -rf "$ARCH_BIN_DIR"
+fi
 
 # Create platform-specific artifacts directory
 mkdir -p $ARCH_LIBS_DIR
+mkdir -p $ARCH_BIN_DIR
 
 SRC_LIBS_FOLDER_GRPC=$GRPC_ROOT/libs/opt
 SRC_LIBS_FOLDER_PROTOBUF=$PROTOBUF_ROOT/src/.libs
@@ -134,12 +151,12 @@ fi
 (cd $ARCH_LIBS_DIR && strip -S *.a)
 
 # Copy binaries (plugins & protoc)
-echo "Copying executables to ${BIN_DIR}"
-(cp -a "${GRPC_ROOT}/bins/opt/." $BIN_DIR)
-(cp "${PROTOBUF_ROOT}/src/protoc" $BIN_DIR)
+echo "Copying executables to ${ARCH_BIN_DIR}"
+(cp -a "${GRPC_ROOT}/bins/opt/." $ARCH_BIN_DIR)
+(cp "${PROTOBUF_ROOT}/src/protoc" $ARCH_BIN_DIR)
 
 # This seems to be a hack, should modify (cp -a "${GRPC_ROOT}/bins/opt/." $BIN_DIR) to copy only files, bot dirs
-(cd $BIN_DIR && rm -rf protobuf)
+(cd $ARCH_BIN_DIR && rm -rf protobuf)
 
 #
 # Build go support
@@ -159,10 +176,10 @@ export GOPATH=$GOROOT_DIR
 #
 # Run go build
 (cd "${GOPROTO_DIR}/protoc-gen-go" && go build)
-(cp "${GOPROTO_DIR}/protoc-gen-go/protoc-gen-go" $BIN_DIR)
+(cp "${GOPROTO_DIR}/protoc-gen-go/protoc-gen-go" $ARCH_BIN_DIR)
 
 # Finally, strip binaries (programs)
-(cd $BIN_DIR && strip -S *)
+(cd $ARCH_BIN_DIR && strip -S *)
 
 # Copy source
 echo 'BUILD DONE!'
