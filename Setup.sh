@@ -34,7 +34,7 @@ echo "GRPC_ROOT=${GRPC_ROOT}"
 # Check if all tools are installed
 for i in ${DEPS[@]}; do
     if [ ! "$(which ${i})" ];then
-       echo "${i} not found, install via 'brew install ${i}'" && exit 1
+       echo "${i} not found, install via 'apt-get install ${i}'" && exit 1
     fi
 done
 
@@ -102,14 +102,26 @@ UNAME_MACH=$(echo $(uname -m) | tr '[:upper:]' '[:lower:]')
 UNAME_OS=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 UNAME_ARCH="${UNAME_MACH}-unknown-${UNAME_OS}-gnu"
 
+LIBCXX_UE_DIR="${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include"
+
 # Export vars (don't know why, but grpc's Makefile does not export therse variables)
 # -Wno-expansion-to-defined to gentoo's clang
-# -Wno-unknown-warning-option - to discard unknown -Wno-expansion-to-defined
+# -Wno-unknown-warning-option - to discard unknown -Wno-expansion-to-defined on ubuntu
 export CFLAGS="-fPIC -Wno-error"
-export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-error -I${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include -I${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include/c++/v1"
+export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-error -I${LIBCXX_UE_DIR} -I${LIBCXX_UE_DIR}/c++/v1"
 export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH}"
 export LDLIBS="-lc++ -lc++abi"
 export PROTOBUF_LDFLAGS_EXTRA="${LDFLAGS} ${LDLIBS}"
+
+# Create an alias 'clocale -> xlocale.h' (if does not exist)
+if [ ! -e "${LIBCXX_UE_DIR}/c++/v1/xlocale.h" ]; then
+    if [ ! -e "${LIBCXX_UE_DIR}/c++/v1/clocale" ]; then
+        echo "${LIBCXX_UE_DIR}/c++/v1/clocale must exist in UE src dir. Exiting..." && exit 1
+    fi
+
+    (cd "${LIBCXX_UE_DIR}/c++/v1" && ln -s clocale xlocale.h)
+    echo "Created an alias to xlocale.h"
+fi
 
 echo "CFLAGS=${CFLAGS}, CXXFLAGS=${CXXFLAGS}, LDFLAGS=${LDFLAGS}, LDLIBS=${LDLIBS}, PROTOBUF_LDFLAGS_EXTRA=${PROTOBUF_LDFLAGS_EXTRA}"
 
@@ -168,7 +180,7 @@ fi
 # Copy binaries (plugins & protoc)
 echo "Copying executables to ${ARCH_BIN_DIR}"
 (cp -a "${GRPC_ROOT}/bins/opt/." $ARCH_BIN_DIR)
-(cp "${PROTOBUF_ROOT}/src/protoc" $ARCH_BIN_DIR)
+(cp -a "${GRPC_ROOT}/bins/opt/protobuf/." $ARCH_BIN_DIR)
 
 # This seems to be a hack, should modify (cp -a "${GRPC_ROOT}/bins/opt/." $BIN_DIR) to copy only files, bot dirs
 (cd $ARCH_BIN_DIR && rm -rf protobuf)
