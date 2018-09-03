@@ -19,9 +19,15 @@
 #include "RpcClientWorker.h"
 #include "GenUtils.h"
 
+#if PLATFORM_WINDOWS
+	#pragma warning(push)
+	#pragma warning (disable : 4125)// decimal digit terminates...
+	#pragma warning (disable : 4647)// behavior change __is_pod...
+	#pragma warning (disable : 4668)// 'symbol' is not defined as a preprocessor macro...
+#endif
+
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
-
 
 // Since GRPC actively uses winapi, we need to forbid windows macros
 // (such as GetMessage, MemoryBarrier, etc.) in our remaining code.
@@ -29,7 +35,8 @@
 // content into Allow/Hide WindowsPlatformTypes.
 // We're unable to 'isolate' the WinAPI usage within a single C++ file thanks to Unity Build.
 #if PLATFORM_WINDOWS
-#include "AllowWindowsPlatformTypes.h"
+	#pragma warning(pop)
+	#include "AllowWindowsPlatformTypes.h"
 #endif
 
 
