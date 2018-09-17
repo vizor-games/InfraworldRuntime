@@ -88,9 +88,11 @@ namespace channel
         {
             grpc::SslCredentialsOptions Options;
 
-            Options.pem_cert_chain = TCHAR_TO_ANSI(*(SslCredentials->PemRootCerts));
-            Options.pem_private_key = TCHAR_TO_ANSI(*(SslCredentials->PemPrivateKey));
-            Options.pem_root_certs = TCHAR_TO_ANSI(*(SslCredentials->PemCertChain));
+            Options.pem_root_certs = TCHAR_TO_ANSI(*(SslCredentials->PemRootCerts));
+			if (SslCredentials->PemPrivateKey.Len() > 0)
+				Options.pem_private_key = TCHAR_TO_ANSI(*(SslCredentials->PemPrivateKey));
+			if (SslCredentials->PemCertChain.Len() > 0)
+				Options.pem_cert_chain = TCHAR_TO_ANSI(*(SslCredentials->PemCertChain));
 
             return grpc::SslCredentials(Options);
         }
