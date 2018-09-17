@@ -27,42 +27,6 @@
 #include "AllowWindowsPlatformTypes.h"
 #endif
 
-std::shared_ptr<grpc::ChannelCredentials> UChannelCredentials::GetGrpcCredentials(UChannelCredentials* const Credentials)
-{
-    // Check whether provided credentails are null.
-    if (!Credentials)
-    {
-        UE_LOG(LogTemp, Error, TEXT("Provided credentials are NULL. (Did you forget to pass ChannelCredentials to instantiation parameters?). Replacement is grpc::InsecureChannelCredentials()."));
-        return grpc::InsecureChannelCredentials();
-    }
-
-    // Classify the credentials
-    if (Credentials->IsA<UGoogleDefaultCredentials>())
-    {
-        return grpc::GoogleDefaultCredentials();
-    }
-    else if (Credentials->IsA<UInsecureChannelCredentials>())
-    {
-        return grpc::InsecureChannelCredentials();
-    }
-    else if (const USslCredentials* const SslCredentials = Cast<USslCredentials>(Credentials))
-    {
-        grpc::SslCredentialsOptions Options;
-
-        Options.pem_root_certs = TCHAR_TO_UTF8(*(SslCredentials->PemRootCerts));
-        if (SslCredentials->PemPrivateKey.Len() > 0)
-            Options.pem_private_key = TCHAR_TO_UTF8(*(SslCredentials->PemPrivateKey));
-        if (SslCredentials->PemCertChain.Len() > 0)
-            Options.pem_cert_chain = TCHAR_TO_UTF8(*(SslCredentials->PemCertChain));
-
-        return grpc::SslCredentials(Options);
-    }
-
-    // Unknown credentials
-    UE_LOG(LogTemp, Error, TEXT("Don't know how to process credentials:'%s'. Replacement is grpc::InsecureChannelCredentials()."), *(Credentials->GetClass()->GetName()));
-    return grpc::InsecureChannelCredentials();
-}
-
 UChannelCredentials* UChannelCredentials::MakeGoogleDefaultCredentials()
 {
     return NewObject<UGoogleDefaultCredentials>();

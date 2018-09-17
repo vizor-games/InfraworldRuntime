@@ -49,8 +49,6 @@ class INFRAWORLDRUNTIME_API UChannelCredentials : public UObject
     GENERATED_BODY()
 
 public:
-    static std::shared_ptr<grpc::ChannelCredentials> GetGrpcCredentials(UChannelCredentials* const Credentials);
-
     /**
      * Builds credentials with reasonable defaults.
      *
