@@ -49,9 +49,11 @@ std::shared_ptr<grpc::ChannelCredentials> UChannelCredentials::GetGrpcCredential
     {
         grpc::SslCredentialsOptions Options;
 
-        Options.pem_cert_chain = TCHAR_TO_UTF8(*(SslCredentials->PemRootCerts));
-        Options.pem_private_key = TCHAR_TO_UTF8(*(SslCredentials->PemPrivateKey));
-        Options.pem_root_certs = TCHAR_TO_UTF8(*(SslCredentials->PemCertChain));
+        Options.pem_root_certs = TCHAR_TO_UTF8(*(SslCredentials->PemRootCerts));
+		if (SslCredentials->PemPrivateKey.Len() > 0)
+			Options.pem_private_key = TCHAR_TO_UTF8(*(SslCredentials->PemPrivateKey));
+		if (SslCredentials->PemCertChain.Len() > 0)
+			Options.pem_cert_chain = TCHAR_TO_UTF8(*(SslCredentials->PemCertChain));
 
         return grpc::SslCredentials(Options);
     }
