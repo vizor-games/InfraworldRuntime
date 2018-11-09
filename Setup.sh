@@ -5,7 +5,7 @@ set -e
 
 ###############################################################################
 # Should be defined as an environment variable, will be v1.3.x otherwise
-branch=${branch:-v1.3.x}
+branch=${branch:-v1.15.x}
 clean=${clean:-true}
 
 VAR_GIT_BRANCH=$branch
@@ -18,10 +18,12 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 GRPC_FOLDER_NAME=grpc
 GRPC_ROOT="${SCRIPT_DIR}/${GRPC_FOLDER_NAME}"
 
-DEPS=(git automake autoconf libtool make strip clang++ go)
+DEPS=(git automake autoconf libtool make strip go)
 
 # Linux needs an existing UE installation
-UE_ROOT=${UE_ROOT:-"/var/lib/jenkins/workspace/Build_UE_Linux"}
+UE_ROOT=${UE_ROOT:-"/var/lib/jenkins/UE_4.20.2-release"}
+UE_PREREQUISITES="Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v11_clang-5.0.0-centos7/x86_64-unknown-linux-gnu"
+
 if [ ! -d "$UE_ROOT" ]; then
     echo "UE_ROOT directory ${UE_ROOT} does not exist, please set correct UE_ROOT"
     exit 1
@@ -92,25 +94,48 @@ mkdir -p $PROTOBUF_SRC_DIR
 cp -R "${GRPC_ROOT}/include" $HEADERS_DIR
 cp -R "${GRPC_ROOT}/third_party/protobuf/src" $PROTOBUF_SRC_DIR
 
-# Export vars (don't know why, but grpc's Makefile does not export therse variables)
-export PATH=$PROTOBUF_ROOT/src:$PATH
-export LDFLAGS="-L${PROTOBUF_ROOT}/src/.libs -lprotobuf"
-export CXXFLAGS="-I${PROTOBUF_ROOT}/src"
-
 # Compute arch string using uname
 UNAME_MACH=$(echo $(uname -m) | tr '[:upper:]' '[:lower:]')
 UNAME_OS=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 UNAME_ARCH="${UNAME_MACH}-unknown-${UNAME_OS}-gnu"
 
 LIBCXX_UE_DIR="${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include"
+LIBC_UE_DIR="${UE_ROOT}/Engine/Extras/ThirdPartyNotUE/emsdk/emscripten/1.37.19/system/include/libc"
 
-# Export vars (don't know why, but grpc's Makefile does not export therse variables)
-# -Wno-expansion-to-defined to gentoo's clang
-# -Wno-unknown-warning-option - to discard unknown -Wno-expansion-to-defined on ubuntu
-export CFLAGS="-fPIC -Wno-error"
-export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-error -I${LIBCXX_UE_DIR} -I${LIBCXX_UE_DIR}/c++/v1"
-export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH}"
-export LDLIBS="-lc++ -lc++abi"
+export CC="${UE_ROOT}/${UE_PREREQUISITES}/bin/clang"
+export CC_FOR_BUILD=${CC}
+export CXX="${UE_ROOT}/${UE_PREREQUISITES}/bin/clang++"
+export CXX_FOR_BUILD=${CXX}
+
+# we need this to avoid 'unknow flavor: old-gnu' error
+if [ ! -e "${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu" ]; then
+    ln -s "${UE_ROOT}/${UE_PREREQUISITES}/bin/ld.lld" "${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu"
+fi
+
+find "${UE_ROOT}/${UE_PREREQUISITES}/usr/lib64" -name '*.o' -exec cp -vfs '{}' "${UE_ROOT}/${UE_PREREQUISITES}/lib64" ";"
+
+# this thing avoid us from gcc usage, we don't need it
+export VALID_CONFIG_gcov=0
+
+# funny, but in grpc Makefile LD and LDXX associated with compilers
+export LD="${CC}"
+export LDXX="${CXX}"
+
+export DEFAULT_CC="${CC}"
+export DEFAULT_CXX="${CXX}"
+
+export CFLAGS="-fPIC -Wno-error -nostdinc -I${LIBC_UE_DIR} --sysroot=${UE_ROOT}/${UE_PREREQUISITES}"
+export CFLAGS_FOR_BUILD=${CFLAGS}
+export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-expansion-to-defined -Wno-error -I${LIBCXX_UE_DIR} -I${LIBCXX_UE_DIR}/c++/v1"
+export CXXFLAGS_FOR_BUILD=${CXXFLAGS}
+
+export LIBRARY_PATH="${UE_ROOT}/${UE_PREREQUISITES}/usr/lib64"
+
+export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH} -fuse-ld=${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu"
+export LDFLAGS_FOR_BUILD=${LDFLAGS}
+
+export LDLIBS="-lc++ -lc++abi -lc"
+
 export PROTOBUF_LDFLAGS_EXTRA="${LDFLAGS} ${LDLIBS}"
 
 # Create an alias 'clocale -> xlocale.h' (if does not exist)
@@ -126,7 +151,7 @@ fi
 echo "CFLAGS=${CFLAGS}, CXXFLAGS=${CXXFLAGS}, LDFLAGS=${LDFLAGS}, LDLIBS=${LDLIBS}, PROTOBUF_LDFLAGS_EXTRA=${PROTOBUF_LDFLAGS_EXTRA}"
 
 # Build GRPC
-(cd $GRPC_ROOT && make C=clang CXX=clang++)
+(cd $GRPC_ROOT && make CC=${CC} CXX=${CXX})
 
 # Copy artifacts
 LIBS_DIR="${SCRIPT_DIR}/GrpcLibraries"
@@ -205,8 +230,13 @@ export GOPATH=$GOROOT_DIR
 (cd "${GOPROTO_DIR}/protoc-gen-go" && go build)
 (cp "${GOPROTO_DIR}/protoc-gen-go/protoc-gen-go" $ARCH_BIN_DIR)
 
-# Finally, strip binaries (programs)
+# Strip binaries (programs)
 (cd $ARCH_BIN_DIR && strip -S *)
+
+# Finnaly, clean all stuff
+rm "${LIBCXX_UE_DIR}/c++/v1/xlocale.h"
+rm "${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu"
+find "${UE_ROOT}/${UE_PREREQUISITES}/lib64" -name '*.o' -type f -delete
 
 # Copy source
 echo 'BUILD DONE!'
