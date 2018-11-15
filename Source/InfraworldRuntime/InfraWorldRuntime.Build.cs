@@ -120,16 +120,14 @@ public class InfraworldRuntime : ModuleRules
 
     public InfraworldRuntime(ReadOnlyTargetRules Target) : base(Target)
     {
-        Definitions.Add("GOOGLE_PROTOBUF_NO_RTTI");
+        PublicDefinitions.Add("GOOGLE_PROTOBUF_NO_RTTI");
+        PublicDefinitions.Add("GPR_FORBID_UNREACHABLE_CODE");
 
         Platform = Target.Platform;
         Configuration = Target.Configuration;
 
         ModuleDepPaths moduleDepPaths = GatherDeps();
         Console.WriteLine(moduleDepPaths.ToString());
-
-        PublicIncludePaths.Add("InfraworldRuntime/Public");
-        PrivateIncludePaths.Add("InfraworldRuntime/Private");
 
         PublicIncludePaths.AddRange(moduleDepPaths.HeaderPaths);
         PublicAdditionalLibraries.AddRange(moduleDepPaths.LibraryPaths);
