@@ -117,6 +117,11 @@ find "${UE_ROOT}/${UE_PREREQUISITES}/usr/lib64" -name '*.o' -exec cp -vfs '{}' "
 # this thing avoid us from gcc usage, we don't need it
 export VALID_CONFIG_gcov=0
 
+# force compile protobuf, libz and libares
+export HAS_SYSTEM_CARES=false
+export HAS_SYSTEM_PROTOBUF=false
+export HAS_SYSTEM_ZLIB=false
+
 # funny, but in grpc Makefile LD and LDXX associated with compilers
 export LD="${CC}"
 export LDXX="${CXX}"
