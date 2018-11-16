@@ -39,6 +39,9 @@ call cmake --build . --target ALL_BUILD --config Release
 robocopy %GRPC_ROOT%\include %GRPC_INCLUDE_DIR%\include /E > nul
 robocopy %GRPC_ROOT%\third_party\protobuf\src %GRPC_INCLUDE_DIR%\third_party\protobuf\src /E > nul
 
+:PATCH_HEADERS
+set GENERATED_MESSAGE_TABLE_DRIVEN_FILE=%SCRIPT_FOLDER%\third_party\protobuf\src\google\protobuf\
+
 :COPY_LIBRARIES
 robocopy "%CMAKE_BUILD_DIR%\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
 robocopy "%CMAKE_BUILD_DIR%\third_party\boringssl\ssl\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
@@ -52,6 +55,12 @@ copy "%CMAKE_BUILD_DIR%\third_party\zlib\Release\zlibstatic.lib" %GRPC_LIBRARIES
 :COPY_PROGRAMS
 robocopy "%CMAKE_BUILD_DIR%\Release" %GRPC_PROGRAMS_DIR% *.exe /R:0 /S > nul
 copy "%CMAKE_BUILD_DIR%\third_party\protobuf\Release\protoc.exe" %GRPC_PROGRAMS_DIR%\protoc.exe
+
+:REMOVE_USELESS_LIBRARIES
+del %GRPC_LIBRARIES_DIR%\grpc_csharp_ext.lib
+del %GRPC_LIBRARIES_DIR%\gflags_static.lib
+del %GRPC_LIBRARIES_DIR%\gflags_nothreads_static.lib
+del %GRPC_LIBRARIES_DIR%\benchmark.lib
 
 :Finish
 cd %SCRIPT_FOLDER%
