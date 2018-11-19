@@ -100,7 +100,7 @@ UNAME_OS=$(echo $(uname) | tr '[:upper:]' '[:lower:]')
 UNAME_ARCH="${UNAME_MACH}-unknown-${UNAME_OS}-gnu"
 
 LIBCXX_UE_DIR="${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include"
-LIBC_UE_DIR="${UE_ROOT}/Engine/Extras/ThirdPartyNotUE/emsdk/emscripten/1.37.19/system/include/libc"
+LIBC_UE_DIR="${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include"
 
 export CC="${UE_ROOT}/${UE_PREREQUISITES}/bin/clang"
 export CC_FOR_BUILD=${CC}
@@ -129,7 +129,7 @@ export LDXX="${CXX}"
 export DEFAULT_CC="${CC}"
 export DEFAULT_CXX="${CXX}"
 
-export CFLAGS="-fPIC -Wno-error -nostdinc -I${LIBC_UE_DIR} --sysroot=${UE_ROOT}/${UE_PREREQUISITES}"
+export CFLAGS="-fPIC -Wno-error --sysroot=${UE_ROOT}/${UE_PREREQUISITES}"
 export CFLAGS_FOR_BUILD=${CFLAGS}
 export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-expansion-to-defined -Wno-error -I${LIBCXX_UE_DIR} -I${LIBCXX_UE_DIR}/c++/v1"
 export CXXFLAGS_FOR_BUILD=${CXXFLAGS}
