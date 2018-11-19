@@ -103,17 +103,17 @@ UNAME_ARCH="${UNAME_MACH}-unknown-${UNAME_OS}-gnu"
 LIBCXX_UE_DIR="${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include"
 LIBC_UE_DIR="${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/include"
 
-export CC="${UE_ROOT}/${UE_PREREQUISITES}/bin/clang"
+export CC="${UE_PREREQUISITES}/bin/clang"
 export CC_FOR_BUILD=${CC}
-export CXX="${UE_ROOT}/${UE_PREREQUISITES}/bin/clang++"
+export CXX="${UE_PREREQUISITES}/bin/clang++"
 export CXX_FOR_BUILD=${CXX}
 
 # we need this to avoid 'unknow flavor: old-gnu' error
-if [ ! -e "${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu" ]; then
-    ln -s "${UE_ROOT}/${UE_PREREQUISITES}/bin/ld.lld" "${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu"
+if [ ! -e "${UE_PREREQUISITES}/bin/lld-gnu" ]; then
+    ln -s "${UE_PREREQUISITES}/bin/ld.lld" "{UE_PREREQUISITES}/bin/lld-gnu"
 fi
 
-find "${UE_ROOT}/${UE_PREREQUISITES}/usr/lib64" -name '*.o' -exec cp -vfs '{}' "${UE_ROOT}/${UE_PREREQUISITES}/lib64" ";"
+find "${UE_PREREQUISITES}/usr/lib64" -name '*.o' -exec cp -vfs '{}' "${UE_PREREQUISITES}/lib64" ";"
 
 # this thing avoid us from gcc usage, we don't need it
 export VALID_CONFIG_gcov=0
@@ -130,14 +130,14 @@ export LDXX="${CXX}"
 export DEFAULT_CC="${CC}"
 export DEFAULT_CXX="${CXX}"
 
-export CFLAGS="-fPIC -Wno-error --sysroot=${UE_ROOT}/${UE_PREREQUISITES}"
+export CFLAGS="-fPIC -Wno-error --sysroot=${UE_PREREQUISITES}"
 export CFLAGS_FOR_BUILD=${CFLAGS}
 export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-expansion-to-defined -Wno-error -I${LIBCXX_UE_DIR} -I${LIBCXX_UE_DIR}/c++/v1"
 export CXXFLAGS_FOR_BUILD=${CXXFLAGS}
 
-export LIBRARY_PATH="${UE_ROOT}/${UE_PREREQUISITES}/usr/lib64"
+export LIBRARY_PATH="${UE_PREREQUISITES}/usr/lib64"
 
-export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH} -fuse-ld=${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu"
+export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH} -fuse-ld=${UE_PREREQUISITES}/bin/lld-gnu"
 export LDFLAGS_FOR_BUILD=${LDFLAGS}
 
 export LDLIBS="-lc++ -lc++abi -lc"
@@ -241,8 +241,8 @@ export GOPATH=$GOROOT_DIR
 
 # Finnaly, clean all stuff
 rm "${LIBCXX_UE_DIR}/c++/v1/xlocale.h"
-rm "${UE_ROOT}/${UE_PREREQUISITES}/bin/lld-gnu"
-find "${UE_ROOT}/${UE_PREREQUISITES}/lib64" -name '*.o' -type f -delete
+rm "${UE_PREREQUISITES}/bin/lld-gnu"
+find "${UE_PREREQUISITES}/lib64" -name '*.o' -type f -delete
 
 # Copy source
 echo 'BUILD DONE!'
