@@ -1,117 +1,67 @@
 @echo off
 
-cls
-
 ::#####################################VARS#############################################################################
 set SCRIPT_FOLDER=%cd%
 
 set GRPC_ROOT=%SCRIPT_FOLDER%\grpc
-set PROTOBUF_SOLUTION_FOLDER=%GRPC_ROOT%\third_party\protobuf\cmake\build\solution
+
+set GRPC_INCLUDE_DIR=%SCRIPT_FOLDER%\GrpcIncludes
+set GRPC_LIBRARIES_DIR=%SCRIPT_FOLDER%\GrpcLibraries\Win64
+set GRPC_PROGRAMS_DIR= %SCRIPT_FOLDER%\GrpcPrograms\Win64
+
+set CMAKE_BUILD_DIR=%GRPC_ROOT%\.build
 
 set REMOTE_ORIGIN=https://github.com/grpc/grpc.git
-set BRANCH=v1.3.x
+set BRANCH=v1.15.x
 
-set VSVARSALL="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
-set CMAKE_FOLDER='C:\Program Files\CMake\bin'
 ::#####################################VARS#############################################################################
 
-:SET_ENV_VARS
-echo Setting cmake && SET PATH=C:/Program Files/CMake/bin;%PATH%
-echo Setting nuget && SET PATH=%cd%;%PATH%
-
-:SET_VS_ENV
-echo Setting vcvarsall && call %VSVARSALL% amd64
-
-:CREATE_FOLDERS
-set ARTIFACTS_ROOT=%GRPC_ROOT%\Artifacts
-set LIBS_ROOT=%ARTIFACTS_ROOT%\grpc_libs
-set STRIPPED_ROOT=%ARTIFACTS_ROOT%\grpc_stripped
-set BIN_ROOT=%ARTIFACTS_ROOT%\grpc_bin
-
-if exist %SCRIPT_FOLDER%\nuget.exe goto :CLONE_OR_PULL
-
-:DOWNLOAD_NUGET
-cd %SCRIPT_FOLDER%
-powershell -executionpolicy bypass -Command Invoke-WebRequest https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile "nuget.exe"
+:CLEAN
+IF EXIST %GRPC_ROOT% (cd %GRPC_ROOT% && git clean -fdx && git submodule foreach git clean -fdx && cd %SCRIPT_FOLDER%) 
+IF EXIST %GRPC_INCLUDE_DIR% (rmdir %GRPC_INCLUDE_DIR%)
+IF EXIST %GRPC_LIBRARIES_DIR% (rmdir %GRPC_LIBRARIES_DIR%)
+IF EXIST %GRPC_PROGRAMS_DIR% (rmdir %GRPC_PROGRAMS_DIR%)
 
 :CLONE_OR_PULL
 if EXIST %GRPC_ROOT% (cd %GRPC_ROOT% && echo Pulling repo && git pull) else (call git clone %REMOTE_ORIGIN% && cd %GRPC_ROOT%)
-
-if exist %ARTIFACTS_ROOT% rmdir %ARTIFACTS_ROOT% /s /q
-mkdir %ARTIFACTS_ROOT%
-mkdir %LIBS_ROOT%
-mkdir %STRIPPED_ROOT%
-mkdir %BIN_ROOT%
 
 git fetch
 git checkout -f
 git checkout -t origin/%BRANCH%
 git submodule update --init
 
-:CLEAN_ALL
-cd %GRPC_ROOT%
-git clean -fdx
-git submodule foreach git clean -fdx
+:BUILD_ALL
+mkdir %CMAKE_BUILD_DIR% && cd %CMAKE_BUILD_DIR%
+call cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release
+call cmake --build . --target ALL_BUILD --config Release
 
 :COPY_HEADERS
-echo Synchronizing %STRIPPED_ROOT%
-robocopy %GRPC_ROOT%\include %STRIPPED_ROOT%\include /E > nul
-robocopy %GRPC_ROOT%\third_party\protobuf\src %STRIPPED_ROOT%\third_party\protobuf\src /E > nul
+robocopy %GRPC_ROOT%\include %GRPC_INCLUDE_DIR%\include /E > nul
+robocopy %GRPC_ROOT%\third_party\protobuf\src %GRPC_INCLUDE_DIR%\third_party\protobuf\src /E > nul
 
-:GENERATE_VS_PROTOBUF_SOLUTION
-cd "%GRPC_ROOT%\third_party\protobuf\cmake"
-mkdir build & cd build
-mkdir solution & cd solution
-cmake -G "Visual Studio 14 2015 Win64" -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_WITH_ZLIB=ON ../..
+:PATCH_HEADERS
+set GENERATED_MESSAGE_TABLE_DRIVEN_FILE=%SCRIPT_FOLDER%\third_party\protobuf\src\google\protobuf\
 
-:PATCH_VS_SOLUTION
-cd %GRPC_ROOT%\..
-powershell -executionpolicy bypass -file edit_props.ps1
+:COPY_LIBRARIES
+robocopy "%CMAKE_BUILD_DIR%\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
+robocopy "%CMAKE_BUILD_DIR%\third_party\boringssl\ssl\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
+robocopy "%CMAKE_BUILD_DIR%\third_party\boringssl\crypto\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
+robocopy "%CMAKE_BUILD_DIR%\third_party\cares\cares\lib\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
+robocopy "%CMAKE_BUILD_DIR%\third_party\benchmark\src\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
+robocopy "%CMAKE_BUILD_DIR%\third_party\gflags\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
+robocopy "%CMAKE_BUILD_DIR%\third_party\protobuf\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
+copy "%CMAKE_BUILD_DIR%\third_party\zlib\Release\zlibstatic.lib" %GRPC_LIBRARIES_DIR%\zlibstatic.lib
 
-:UPGRADE_VS_SOLUTIONS
-cd %PROTOBUF_SOLUTION_FOLDER%
-devenv protobuf.sln /upgrade
+:COPY_PROGRAMS
+robocopy "%CMAKE_BUILD_DIR%\Release" %GRPC_PROGRAMS_DIR% *.exe /R:0 /S > nul
+copy "%CMAKE_BUILD_DIR%\third_party\protobuf\Release\protoc.exe" %GRPC_PROGRAMS_DIR%\protoc.exe
 
-cd %GRPC_ROOT%/vsprojects
-devenv grpc_protoc_plugins.sln /upgrade
-
-:CLEAN_PROTOBUF_SOLUTION
-cd %PROTOBUF_SOLUTION_FOLDER%
-devenv protobuf.sln /clean "Debug|x64"
-devenv protobuf.sln /clean "Release|x64"
-
-:BUILD_PROTOBUF
-cd %PROTOBUF_SOLUTION_FOLDER%
-devenv protobuf.sln /build "Release|x64" /project ALL_BUILD
-
-:BUILD_GRPC
-cd "%GRPC_ROOT%\vsprojects"
-nuget restore grpc.sln
-devenv grpc.sln /upgrade
-devenv grpc.sln /clean "Release|x64"
-devenv grpc.sln /build "Release|x64" /project grpc++
-devenv grpc.sln /build "Release|x64" /project grpc++_unsecure
-
-:BUILD_PLUGINS
-cd "%GRPC_ROOT%\vsprojects"
-nuget restore grpc_protoc_plugins.sln
-devenv grpc_protoc_plugins.sln /upgrade
-devenv grpc_protoc_plugins.sln /clean "Release|x64"
-devenv grpc_protoc_plugins.sln /build "Release|x64"
+:REMOVE_USELESS_LIBRARIES
+del %GRPC_LIBRARIES_DIR%\grpc_csharp_ext.lib
+del %GRPC_LIBRARIES_DIR%\gflags_static.lib
+del %GRPC_LIBRARIES_DIR%\gflags_nothreads_static.lib
+del %GRPC_LIBRARIES_DIR%\benchmark.lib
 
 :Finish
-cd %GRPC_ROOT%
+cd %SCRIPT_FOLDER%
 echo Build done!
-
-:COPY_LIBS
-echo Synchronizing %LIBS_ROOT%
-robocopy "%GRPC_ROOT%\vsprojects\packages\grpc.dependencies.zlib.1.2.8.10\build\native\lib\v140\x64\Release\static\stdcall" %LIBS_ROOT% *.lib /R:0 /S > nul
-robocopy "%GRPC_ROOT%\vsprojects\packages\grpc.dependencies.openssl.1.0.204.1\build\native\lib\v140\x64\Release\static" %LIBS_ROOT% *.lib /R:0 /S > nul
-robocopy "%GRPC_ROOT%\third_party\protobuf\cmake\build\solution\Release" %LIBS_ROOT% "libprotobuf.lib" > nul
-robocopy "%GRPC_ROOT%\third_party\protobuf\cmake\build\solution\Release" %LIBS_ROOT% "libprotobuf-lite.lib" > nul
-robocopy "%GRPC_ROOT%\vsprojects\x64\Release" %LIBS_ROOT% *.lib /R:0 /S > nul
-
-:COPY_BIN
-echo Synchronizing %BIN_ROOT%
-robocopy "%GRPC_ROOT%\third_party\protobuf\cmake\build\solution\Release" %BIN_ROOT% "protoc.exe" > nul
-robocopy "%GRPC_ROOT%\vsprojects\x64\Release" %BIN_ROOT% *.exe /R:0 /S > nul

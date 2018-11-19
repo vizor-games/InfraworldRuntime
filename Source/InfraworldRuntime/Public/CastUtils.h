@@ -21,9 +21,23 @@
 #include <functional>
 #include <chrono>
 
+
+#if PLATFORM_WINDOWS
+	#pragma warning(push)
+	#pragma warning (disable : 4125)// decimal digit terminates...
+	#pragma warning (disable : 4647)// behavior change __is_pod...
+	#pragma warning (disable : 4668)// 'symbol' is not defined as a preprocessor macro...
+	#pragma warning (disable : 4456)// declaration of 'size' hides previous local declaration
+
+#endif
+
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/map.h>
 #include <grpc++/client_context.h>
+
+#if PLATFORM_WINDOWS
+	#pragma warning(pop)
+#endif
 
 // Should be imported to avoid long chrono-related instructions.
 using std::chrono::milliseconds;

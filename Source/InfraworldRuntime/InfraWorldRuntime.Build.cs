@@ -120,16 +120,21 @@ public class InfraworldRuntime : ModuleRules
 
     public InfraworldRuntime(ReadOnlyTargetRules Target) : base(Target)
     {
-        Definitions.Add("GOOGLE_PROTOBUF_NO_RTTI");
+        PublicDefinitions.Add("GOOGLE_PROTOBUF_NO_RTTI");
+        PublicDefinitions.Add("GPR_FORBID_UNREACHABLE_CODE");
+
+        //TODO: We do this because in file generated_message_table_driven.h that located in protobuf sources 
+        //TODO: line 174: static_assert(std::is_pod<AuxillaryParseTableField>::value, "");
+        //TODO: causes С4647 level 3 warning __is_pod behavior change
+        //TODO: UE4 threading some warnings as errors, and we have no chance to suppress this stuff
+        //TODO: So, we don't want to change any third-party code, this why we add this definition
+        PublicDefinitions.Add("__NVCC__");
 
         Platform = Target.Platform;
         Configuration = Target.Configuration;
 
         ModuleDepPaths moduleDepPaths = GatherDeps();
         Console.WriteLine(moduleDepPaths.ToString());
-
-        PublicIncludePaths.Add("InfraworldRuntime/Public");
-        PrivateIncludePaths.Add("InfraworldRuntime/Private");
 
         PublicIncludePaths.AddRange(moduleDepPaths.HeaderPaths);
         PublicAdditionalLibraries.AddRange(moduleDepPaths.LibraryPaths);
