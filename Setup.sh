@@ -22,12 +22,13 @@ DEPS=(git automake autoconf libtool make strip go)
 
 # Linux needs an existing UE installation
 UE_ROOT=${UE_ROOT:-"/var/lib/jenkins/UE_4.20.2-release"}
-UE_PREREQUISITES="Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v11_clang-5.0.0-centos7/x86_64-unknown-linux-gnu"
 
 if [ ! -d "$UE_ROOT" ]; then
     echo "UE_ROOT directory ${UE_ROOT} does not exist, please set correct UE_ROOT"
     exit 1
 fi;
+
+UE_PREREQUISITES="${UE_ROOT}/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v11_clang-5.0.0-centos7/x86_64-unknown-linux-gnu"
 ###############################################################################
 
 echo "SCRIPT_DIR=${SCRIPT_DIR}"
