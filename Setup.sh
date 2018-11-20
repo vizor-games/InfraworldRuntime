@@ -110,7 +110,7 @@ export CXX_FOR_BUILD=${CXX}
 
 # we need this to avoid 'unknow flavor: old-gnu' error
 if [ ! -e "${UE_PREREQUISITES}/bin/lld-gnu" ]; then
-    ln -s "${UE_PREREQUISITES}/bin/ld.lld" "{UE_PREREQUISITES}/bin/lld-gnu"
+    ln -s "${UE_PREREQUISITES}/bin/ld.lld" "${UE_PREREQUISITES}/bin/lld-gnu"
 fi
 
 find "${UE_PREREQUISITES}/usr/lib64" -name '*.o' -exec cp -vfs '{}' "${UE_PREREQUISITES}/lib64" ";"
