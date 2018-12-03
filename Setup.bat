@@ -4,7 +4,6 @@
 set SCRIPT_FOLDER=%cd%
 
 set GRPC_ROOT=%SCRIPT_FOLDER%\grpc
-
 set GRPC_INCLUDE_DIR=%SCRIPT_FOLDER%\GrpcIncludes
 set GRPC_LIBRARIES_DIR=%SCRIPT_FOLDER%\GrpcLibraries\Win64
 set GRPC_PROGRAMS_DIR= %SCRIPT_FOLDER%\GrpcPrograms\Win64
@@ -13,8 +12,10 @@ set CMAKE_BUILD_DIR=%GRPC_ROOT%\.build
 
 set REMOTE_ORIGIN=https://github.com/grpc/grpc.git
 set BRANCH=v1.15.x
-
 ::#####################################VARS#############################################################################
+
+:GET_UE_ROOT
+IF "%UE_ROOT%" == "" (echo "UE_ROOT directory does not exist, please set correct UE_ROOT via SET UE_ROOT=<PATH_TO_UNREAL_ENGINE_FOLDER>" && GOTO ABORT)
 
 :CLEAN
 IF EXIST %GRPC_ROOT% (cd %GRPC_ROOT% && git clean -fdx && git submodule foreach git clean -fdx && cd %SCRIPT_FOLDER%) 
@@ -32,7 +33,7 @@ git submodule update --init
 
 :BUILD_ALL
 mkdir %CMAKE_BUILD_DIR% && cd %CMAKE_BUILD_DIR%
-call cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release
+call cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CONFIGURATION_TYPES=Release -Dprotobuf_BUILD_TESTS=OFF -DgRPC_ZLIB_PROVIDER=package -DZLIB_INCLUDE_DIR=%UE_ROOT%\Engine\Source\ThirdParty\zlib\v1.2.8\include\Win64\VS2015 -DZLIB_LIBRARY_DEBUG=%UE_ROOT%\Engine\Source\ThirdParty\zlib\v1.2.8\lib\Win64\VS2015\zlibstatic.lib -DZLIB_LIBRARY_RELEASE=%UE_ROOT%\Engine\Source\ThirdParty\zlib\v1.2.8\lib\Win64\VS2015\zlibstatic.lib -DgRPC_SSL_PROVIDER=package -DLIB_EAY_LIBRARY_DEBUG=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\libeay64_static.lib -DLIB_EAY_LIBRARY_RELEASE=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\libeay64_static.lib -DLIB_EAY_DEBUG=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\libeay64_static.lib -DLIB_EAY_RELEASE=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\libeay64_static.lib -DOPENSSL_INCLUDE_DIR=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\include\Win64\VS2015 -DSSL_EAY_DEBUG=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\ssleay64_static.lib -DSSL_EAY_LIBRARY_DEBUG=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\ssleay64_static.lib -DSSL_EAY_LIBRARY_RELEASE=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\ssleay64_static.lib -DSSL_EAY_RELEASE=%UE_ROOT%\Engine\Source\ThirdParty\OpenSSL\1_0_2h\lib\Win64\VS2015\ssleay64_static.lib
 call cmake --build . --target ALL_BUILD --config Release
 
 :COPY_HEADERS
@@ -44,13 +45,10 @@ set GENERATED_MESSAGE_TABLE_DRIVEN_FILE=%SCRIPT_FOLDER%\third_party\protobuf\src
 
 :COPY_LIBRARIES
 robocopy "%CMAKE_BUILD_DIR%\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
-robocopy "%CMAKE_BUILD_DIR%\third_party\boringssl\ssl\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
-robocopy "%CMAKE_BUILD_DIR%\third_party\boringssl\crypto\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
 robocopy "%CMAKE_BUILD_DIR%\third_party\cares\cares\lib\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
 robocopy "%CMAKE_BUILD_DIR%\third_party\benchmark\src\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
 robocopy "%CMAKE_BUILD_DIR%\third_party\gflags\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
 robocopy "%CMAKE_BUILD_DIR%\third_party\protobuf\Release" %GRPC_LIBRARIES_DIR% *.lib /R:0 /S > nul
-copy "%CMAKE_BUILD_DIR%\third_party\zlib\Release\zlibstatic.lib" %GRPC_LIBRARIES_DIR%\zlibstatic.lib
 
 :COPY_PROGRAMS
 robocopy "%CMAKE_BUILD_DIR%\Release" %GRPC_PROGRAMS_DIR% *.exe /R:0 /S > nul
@@ -64,4 +62,11 @@ del %GRPC_LIBRARIES_DIR%\benchmark.lib
 
 :Finish
 cd %SCRIPT_FOLDER%
+GOTO GRACEFULEXIT
+
+:ABORT
+pause
+echo Aborted...
+
+:GRACEFULEXIT
 echo Build done!
