@@ -16,24 +16,11 @@
 #include "InfraworldRuntime.h"
 #include "ChannelCredentials.h"
 
-#if PLATFORM_WINDOWS
-	#pragma warning(push)
-	#pragma warning (disable : 4125)// decimal digit terminates...
-	#pragma warning (disable : 4647)// behavior change __is_pod...
-	#pragma warning (disable : 4668)// 'symbol' is not defined as a preprocessor macro...
-#endif
+#include "GrpcIncludesBegin.h"
 
 #include <grpc++/security/credentials.h>
 
-// Since GRPC actively uses winapi, we need to forbid windows macros
-// (such as GetMessage, MemoryBarrier, etc.) in our remaining code.
-// To do it, we 'wrap' all the C++ file's including ANY GRPC header files
-// content into Allow/Hide WindowsPlatformTypes.
-// We're unable to 'isolate' the WinAPI usage within a single C++ file thanks to Unity Build.
-#if PLATFORM_WINDOWS
-	#pragma warning(pop)
-	#include "AllowWindowsPlatformTypes.h"
-#endif
+#include "GrpcIncludesEnd.h"
 
 UChannelCredentials* UChannelCredentials::MakeGoogleDefaultCredentials()
 {

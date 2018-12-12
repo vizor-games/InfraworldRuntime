@@ -25,7 +25,7 @@
 
 namespace channel
 {
-    bool WaitUntilChannelIsReady(const std::shared_ptr<grpc::Channel>& Channel, std::chrono::system_clock::time_point Deadline)
+    FORCEINLINE bool WaitUntilChannelIsReady(const std::shared_ptr<grpc::Channel>& Channel, std::chrono::system_clock::time_point Deadline)
     {
         grpc_connectivity_state State = Channel->GetState(true);
 
@@ -40,7 +40,7 @@ namespace channel
         return true;
     }
 
-    bool WaitForConnection(float Seconds, const std::shared_ptr<grpc::Channel>& Channel)
+	FORCEINLINE bool WaitForConnection(float Seconds, const std::shared_ptr<grpc::Channel>& Channel)
     {
         bool IsConnected = false;
 
@@ -66,7 +66,7 @@ namespace channel
         return IsConnected;
     }
 
-    std::shared_ptr<grpc::ChannelCredentials> GetGrpcCredentials(UChannelCredentials* const Credentials)
+	FORCEINLINE std::shared_ptr<grpc::ChannelCredentials> GetGrpcCredentials(UChannelCredentials* const Credentials)
     {
         // Check whether provided credentails are null.
         if (!Credentials)
@@ -89,7 +89,7 @@ namespace channel
             grpc::SslCredentialsOptions Options;
 
             if (SslCredentials->PemRootCerts.Len() > 0)
-            	Options.pem_root_certs = TCHAR_TO_ANSI(*(SslCredentials->PemRootCerts));
+                Options.pem_root_certs = TCHAR_TO_ANSI(*(SslCredentials->PemRootCerts));
             if (SslCredentials->PemPrivateKey.Len() > 0)
                 Options.pem_private_key = TCHAR_TO_ANSI(*(SslCredentials->PemPrivateKey));
             if (SslCredentials->PemCertChain.Len() > 0)
@@ -103,7 +103,7 @@ namespace channel
         return grpc::InsecureChannelCredentials();
     }
 
-    std::shared_ptr<grpc::Channel> CreateChannel(RpcClientWorker* Worker)
+	FORCEINLINE std::shared_ptr<grpc::Channel> CreateChannel(RpcClientWorker* Worker)
     {
         UChannelCredentials* const ChannelCredentials = Worker->ChannelCredentials;
         UE_CLOG(!ChannelCredentials, LogTemp, Fatal, TEXT("Channel Credentials mustn't be null"));

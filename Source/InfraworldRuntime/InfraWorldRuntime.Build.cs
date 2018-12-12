@@ -122,6 +122,7 @@ public class InfraworldRuntime : ModuleRules
     {
         PublicDefinitions.Add("GOOGLE_PROTOBUF_NO_RTTI");
         PublicDefinitions.Add("GPR_FORBID_UNREACHABLE_CODE");
+        PublicDefinitions.Add("GRPC_ALLOW_EXCEPTIONS=0");
 
         //TODO: We do this because in file generated_message_table_driven.h that located in protobuf sources 
         //TODO: line 174: static_assert(std::is_pod<AuxillaryParseTableField>::value, "");
@@ -139,7 +140,12 @@ public class InfraworldRuntime : ModuleRules
         PublicIncludePaths.AddRange(moduleDepPaths.HeaderPaths);
         PublicAdditionalLibraries.AddRange(moduleDepPaths.LibraryPaths);
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core" });
+        PublicDependencyModuleNames.AddRange(new string[] {
+            "Core"
+        });
+
+        AddEngineThirdPartyPrivateStaticDependencies(Target, "OpenSSL");
+        AddEngineThirdPartyPrivateStaticDependencies(Target, "zlib");
 
         PrivateDependencyModuleNames.AddRange(new string[] { "CoreUObject", "Engine" });
 
