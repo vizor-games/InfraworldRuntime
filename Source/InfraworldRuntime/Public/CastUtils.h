@@ -268,8 +268,8 @@ namespace casts
     FORCEINLINE void CastStatus(const grpc::Status& InStatus, FGrpcStatus& OutStatus)
     {
         OutStatus.ErrorCode = Proto_EnumCast<EGrpcStatusCode>(InStatus.error_code());
-        OutStatus.ErrorMessage = Proto_Cast<FString>(InStatus.error_details());
-        OutStatus.ErrorDetails = Proto_Cast<FString>(InStatus.error_message());
+        OutStatus.ErrorMessage = Proto_Cast<FString>(InStatus.error_message());
+        OutStatus.ErrorDetails = Proto_Cast<FString>(InStatus.error_details());
     }
 
     // Since we have no support for unsigned types in Blueprints, we need to
