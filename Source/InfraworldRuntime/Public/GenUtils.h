@@ -31,7 +31,7 @@ struct INFRAWORLDRUNTIME_API FByteArray
 {
     GENERATED_USTRUCT_BODY()
 
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category=ArrayWrapper)
     TArray<uint8> Bytes;
 
     FByteArray()
@@ -83,7 +83,7 @@ struct INFRAWORLDRUNTIME_API FGrpcClientContext
     /**
      * Whether the optional Metadata attribute of the context is set.
      */
-    UPROPERTY(EditAnywhere, meta=(InlineEditConditionToggle))
+    UPROPERTY(EditAnywhere, meta=(InlineEditConditionToggle), Category=Metadata)
     bool bOverride_Metadata = false;
 
     /**
@@ -101,52 +101,52 @@ struct INFRAWORLDRUNTIME_API FGrpcClientContext
      * Note: Value The metadata value. If its value is binary, it must be base64-encoding
      *       https://tools.ietf.org/html/rfc4648#section-4 and Key must end in "-bin".
      */
-    UPROPERTY(BlueprintReadWrite, meta=(editcondition=bOverride_Metadata))
+    UPROPERTY(BlueprintReadWrite, meta=(editcondition=bOverride_Metadata), Category=Metadata)
     TMap<FString, FString> Metadata;
 
     /**
      * Set the deadline for the client call. Won't apply any deadline if values are (-INF, 0].
      * @warning This method should only be called before invoking the rpc.
      */
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category=Metadata)
     float DeadlineSeconds = -1.0f;
 
     /**
      * Set the per call authority header.
      * @see https://tools.ietf.org/html/rfc7540#section-8.1.2.3.
      */
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category=Metadata)
     FString Authority;
 
     /**
      * Set an algorithm to be the compression algorithm used for the client call.
      */
-    UPROPERTY(BlueprintReadWrite, AdvancedDisplay)
+    UPROPERTY(BlueprintReadWrite, AdvancedDisplay, Category=Metadata)
     EGrpcCompressionAlgorithm GrpcCompressionAlgorithm;
 
     /**
      * EXPERIMENTAL: Set this request to be idempotent.
      */
-    UPROPERTY(BlueprintReadWrite, AdvancedDisplay)
+    UPROPERTY(BlueprintReadWrite, AdvancedDisplay, Category=Metadata)
     bool bIdempotent;
 
     /**
      * EXPERIMENTAL: Set this request to be cacheable.
      */
-    UPROPERTY(BlueprintReadWrite, AdvancedDisplay)
+    UPROPERTY(BlueprintReadWrite, AdvancedDisplay, Category=Metadata)
     bool bCacheable;
 
     /**
      * EXPERIMENTAL: Trigger wait-for-ready or not on this request.
      */
-    UPROPERTY(BlueprintReadWrite, AdvancedDisplay)
+    UPROPERTY(BlueprintReadWrite, AdvancedDisplay, Category=Metadata)
     bool bWaitForReady;
 
     /**
      * Flag whether the initial metadata should be corked. If corked is true, then the initial metadata will be colasced
      * with the write of first message in the stream.
      */
-    UPROPERTY(BlueprintReadWrite, AdvancedDisplay)
+    UPROPERTY(BlueprintReadWrite, AdvancedDisplay, Category=Metadata)
     bool bInitialMetadataCorked;
 };
 
@@ -341,19 +341,19 @@ struct INFRAWORLDRUNTIME_API FGrpcStatus
     /**
      * Return the instance's error code.
      */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, Category=Status)
     EGrpcStatusCode ErrorCode;
 
     /**
      * Return the instance's error message.
      */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, Category=Status)
     FString ErrorMessage;
 
     /**
      * The (binary) error details. Usually it contains a serialized google.rpc.Status proto.
      */
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, Category=Status)
     FString ErrorDetails;
 };
 

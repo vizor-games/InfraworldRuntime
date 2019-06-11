@@ -32,7 +32,7 @@ struct INFRAWORLDRUNTIME_API FRpcError
 {
     GENERATED_USTRUCT_BODY()
 
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly, Category=Grpc)
     FString ErrorMessage;
 };
 
@@ -120,13 +120,13 @@ class INFRAWORLDRUNTIME_API USslCredentials : public UChannelCredentials
     GENERATED_BODY()
 
 public:
-    UPROPERTY(BlueprintReadOnly, Transient, DisplayName="PEM Root Certificates")
+    UPROPERTY(BlueprintReadOnly, Transient, DisplayName="PEM Root Certificates", Category=GrpcCerts)
     FString PemRootCerts;
 
-    UPROPERTY(BlueprintReadOnly, Transient, DisplayName="PEM Private Key")
+    UPROPERTY(BlueprintReadOnly, Transient, DisplayName="PEM Private Key", Category=GrpcCerts)
     FString PemPrivateKey;
 
-    UPROPERTY(BlueprintReadOnly, Transient, DisplayName="PEM Certificate Chain")
+    UPROPERTY(BlueprintReadOnly, Transient, DisplayName="PEM Certificate Chain", Category=GrpcCerts)
     FString PemCertChain;
 };
 
@@ -152,20 +152,20 @@ struct INFRAWORLDRUNTIME_API FRpcClientInstantiationParameters
     /**
      * The IP address of the endpoint to connect to.
      */
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category=Endpoint)
     FString Ip;
 
     /**
      * The port of the endpoint to connect to.
      */
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category=EndpointPort)
     int32 Port;
 
     /**
      * Credentials to use for the created RPC client. If it does not hold
      * an object or is invalid, an error will be thrown.
      */
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY(BlueprintReadWrite, Category=Credentials)
     UChannelCredentials* ChannelCredentials;
 
     /**

@@ -28,7 +28,7 @@ if [ ! -d "$UE_ROOT" ]; then
     exit 1
 fi;
 
-UE_PREREQUISITES="${UE_ROOT}/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v11_clang-5.0.0-centos7/x86_64-unknown-linux-gnu"
+UE_PREREQUISITES="${UE_ROOT}/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v13_clang-7.0.1-centos7/x86_64-unknown-linux-gnu"
 ###############################################################################
 
 echo "SCRIPT_DIR=${SCRIPT_DIR}"

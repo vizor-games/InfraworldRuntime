@@ -19,8 +19,8 @@
 #include "UObject/NoExportTypes.h"
 
 
-#include "Queue.h"
-#include "SubclassOf.h"
+#include "Containers/Queue.h"
+#include "Templates/SubclassOf.h"
 
 #include "RpcClientWorker.h"
 #include "ChannelCredentials.h"
