@@ -69,5 +69,5 @@ void RpcClientWorker::DispatchError(const FString& ErrorMessage)
 }
 
 #if PLATFORM_WINDOWS
-#include "HideWindowsPlatformTypes.h"
+#include "Windows/HideWindowsPlatformTypes.h"
 #endif

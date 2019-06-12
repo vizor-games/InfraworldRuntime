@@ -24,7 +24,7 @@
 	#ifndef UE4_MINIMAL_WINDOWS_INCLUDE
 		#define UE4_MINIMAL_WINDOWS_INCLUDE
 	#endif
-	#include "AllowWindowsPlatformTypes.h"
+	#include "Windows/AllowWindowsPlatformTypes.h"
 #elif PLATFORM_COMPILER_CLANG
 	#pragma clang diagnostic pop
 #endif

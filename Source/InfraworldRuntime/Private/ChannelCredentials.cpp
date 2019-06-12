@@ -44,5 +44,5 @@ UChannelCredentials* UChannelCredentials::MakeInsecureChannelCredentials()
 }
 
 #if PLATFORM_WINDOWS
-#include "HideWindowsPlatformTypes.h"
+#include "Windows/HideWindowsPlatformTypes.h"
 #endif
