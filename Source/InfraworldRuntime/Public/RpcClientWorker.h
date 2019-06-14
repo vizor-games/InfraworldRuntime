@@ -17,9 +17,9 @@
 
 #include "CoreMinimal.h"
 
-#include "Queue.h"
+#include "Containers/Queue.h"
 #include "ChannelCredentials.h"
-#include "Runnable.h"
+#include "HAL/Runnable.h"
 
 #include <memory>
 #include <chrono>

@@ -13,10 +13,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-#include "InfraworldRuntime.h"
-#include "PlatformTime.h"
-
 #include "RpcClientWorker.h"
+
+#include "InfraworldRuntime.h"
+
+#include "HAL/PlatformTime.h"
 #include "GenUtils.h"
 
 #include "GrpcIncludesBegin.h"
@@ -68,5 +69,5 @@ void RpcClientWorker::DispatchError(const FString& ErrorMessage)
 }
 
 #if PLATFORM_WINDOWS
-#include "HideWindowsPlatformTypes.h"
+#include "Windows/HideWindowsPlatformTypes.h"
 #endif
