@@ -72,8 +72,9 @@ public:
      * In widget (for example) you should call it every update (or redraw/invalidate).
      *
      * @note that frequency, you're calling this method won't ever affect the speed of message processing.
+     * @deprecated No need to call this function anymore.
      */
-    UFUNCTION(BlueprintCallable, Category="Vizor|RPC Client")
+    UFUNCTION(BlueprintCallable, Category = "Vizor|RPC Client", meta = (DeprecatedFunction, DeprecationMessage = "No need to call this function anymore: Updates now are being dispatched automatically"))
     void Update();
 
     /**
