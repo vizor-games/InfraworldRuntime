@@ -19,6 +19,9 @@
 #include "RpcClientWorker.h"
 #include "GrpcUriValidator.h"
 
+#include "Ticker.h"
+#include "CoreDelegates.h"
+
 #include "Misc/DefaultValueHelper.h"
 #include "HAL/RunnableThread.h"
 #include "Kismet/KismetStringLibrary.h"
@@ -65,10 +68,31 @@ bool URpcClient::Init(const FString& URI, UChannelCredentials* ChannelCredential
         }
     }
 
+    if (CanSendRequests())
+    {
+        TickDelegateHandle = FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateLambda([this](float)
+        {
+            if (!ErrorMessageQueue.IsEmpty())
+            {
+                FRpcError ReceivedError;
+                ErrorMessageQueue.Dequeue(ReceivedError);
+                EventRpcError.Broadcast(this, ReceivedError);
+
+                // No need to call URpcClient::HierarchicalUpdate() if got any errors (Errors first)
+            }
+            else
+            {
+                HierarchicalUpdate();
+            }
+
+            return true;
+        }));
+    }
+
     return bCanSendRequests;
 }
 
-URpcClient::URpcClient() : InnerWorker(nullptr)
+URpcClient::URpcClient() : InnerWorker(nullptr), TickDelegateHandle()
 {
 }
 
@@ -86,18 +110,7 @@ URpcClient::~URpcClient()
 
 void URpcClient::Update()
 {
-    if (!ErrorMessageQueue.IsEmpty())
-    {
-        FRpcError RecievedError;
-        ErrorMessageQueue.Dequeue(RecievedError);
-        EventRpcError.Broadcast(this, RecievedError);
-
-        // No need to call URpcClient::HierarchicalUpdate() if got any errors (Errors first)
-    }
-    else
-    {
-        HierarchicalUpdate();
-    }
+    // Occasionally left blank
 }
 
 bool URpcClient::CanSendRequests() const

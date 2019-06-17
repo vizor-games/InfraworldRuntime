@@ -136,6 +136,12 @@ private:
 
     /** An accumulator for error messages */
     TQueue<FRpcError> ErrorMessageQueue;
+
+    /**
+     * Global engine ticker handler
+     * Only "IsValid() -> true" if this RPC client "CanSendRequests() -> true"
+     */
+    FDelegateHandle TickDelegateHandle;
 };
 
 template <class T>
