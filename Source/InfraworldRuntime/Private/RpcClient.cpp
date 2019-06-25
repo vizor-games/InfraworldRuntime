@@ -164,6 +164,8 @@ void URpcClient::Stop(bool bSynchronous)
 
         delete Thread;
         Thread = nullptr;
+	    
+	FTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
     }
     else
     {
