@@ -18,7 +18,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 GRPC_FOLDER_NAME=grpc
 GRPC_ROOT="${SCRIPT_DIR}/${GRPC_FOLDER_NAME}"
 
-DEPS=(git automake autoconf libtool make strip go)
+DEPS=(git automake autoconf libtool make strip go pkg-config)
 
 # Linux needs an existing UE installation
 UE_ROOT=${UE_ROOT:-"/var/lib/jenkins/UE_4.20.2-release"}
@@ -30,6 +30,9 @@ fi;
 
 UE_PREREQUISITES="${UE_ROOT}/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v13_clang-7.0.1-centos7/x86_64-unknown-linux-gnu"
 ###############################################################################
+
+OPENSSL_LIB="${UE_ROOT}/Engine/Source/ThirdParty/OpenSSL/1_0_2h/lib/Linux/x86_64-unknown-linux-gnu"
+OPENSSL_INCLUDE="${UE_ROOT}/Engine/Source/ThirdParty/OpenSSL/1_0_2h/include/Linux/x86_64-unknown-linux-gnu"
 
 echo "SCRIPT_DIR=${SCRIPT_DIR}"
 echo "GRPC_ROOT=${GRPC_ROOT}"
@@ -132,12 +135,12 @@ export DEFAULT_CXX="${CXX}"
 
 export CFLAGS="-fPIC -Wno-error --sysroot=${UE_PREREQUISITES}"
 export CFLAGS_FOR_BUILD=${CFLAGS}
-export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-expansion-to-defined -Wno-error -I${LIBCXX_UE_DIR} -I${LIBCXX_UE_DIR}/c++/v1"
+export CXXFLAGS="-std=c++14 -fPIC -nostdinc++ -Wno-expansion-to-defined -Wno-error -I${LIBCXX_UE_DIR} -I${LIBCXX_UE_DIR}/c++/v1 -I${OPENSSL_INCLUDE}"
 export CXXFLAGS_FOR_BUILD=${CXXFLAGS}
 
 export LIBRARY_PATH="${UE_PREREQUISITES}/usr/lib64"
 
-export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH} -fuse-ld=${UE_PREREQUISITES}/bin/lld-gnu"
+export LDFLAGS="-L${UE_ROOT}/Engine/Source/ThirdParty/Linux/LibCxx/lib/Linux/${UNAME_ARCH} -L${OPENSSL_LIB} -fuse-ld=${UE_PREREQUISITES}/bin/lld-gnu"
 export LDFLAGS_FOR_BUILD=${LDFLAGS}
 
 export LDLIBS="-lc++ -lc++abi -lc"
