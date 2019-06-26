@@ -19,8 +19,8 @@
 #include "RpcClientWorker.h"
 #include "GrpcUriValidator.h"
 
-#include "Ticker.h"
-#include "CoreDelegates.h"
+#include "Containers/Ticker.h"
+#include "Misc/CoreDelegates.h"
 
 #include "Misc/DefaultValueHelper.h"
 #include "HAL/RunnableThread.h"
