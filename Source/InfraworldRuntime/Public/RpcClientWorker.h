@@ -58,10 +58,10 @@ public:
 //public:
     FString URI;
     UChannelCredentials* ChannelCredentials;
-    
+
     TQueue<FRpcError>* ErrorMessageQueue;
 
-private:
+protected:
     // False by default. Being set to true when the thread is need to be shut down.
 	volatile bool bPendingStopped;
 };

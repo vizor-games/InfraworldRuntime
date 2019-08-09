@@ -17,7 +17,7 @@
 
 #include "CoreMinimal.h"
 #include "HAL/PlatformTLS.h"
-#include "Queue.h"
+#include "Containers/Queue.h"
 
 /**
  * A conduit is a combination of two channel: The Request channel, and the Response channel, representing bidirectional queue.
