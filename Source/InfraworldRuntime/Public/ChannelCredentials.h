@@ -22,10 +22,10 @@
 
 #include "ChannelCredentials.generated.h"
 
-namespace grpc
-{
-    class ChannelCredentials;
-}
+// namespace grpc
+// {
+//     class ChannelCredentials;
+// }
 
 USTRUCT(BlueprintType)
 struct INFRAWORLDRUNTIME_API FRpcError
