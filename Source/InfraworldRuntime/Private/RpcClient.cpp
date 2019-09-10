@@ -48,19 +48,19 @@ bool URpcClient::Init(const FString& URI, UChannelCredentials* ChannelCredential
         // Launch 'chaining' hierarchical init, which will init a superclass (a concrete implementation).
         HierarchicalInit();
 
-        InnerWorker->URI = URI;
-        InnerWorker->ChannelCredentials = ChannelCredentials;
-
         // Retrieve and set an Error Message Queue
         if (InnerWorker)
         {
+            InnerWorker->URI = URI;
+            InnerWorker->ChannelCredentials = ChannelCredentials;
+
             InnerWorker->ErrorMessageQueue = &ErrorMessageQueue;
 
             const FString ThreadName(FString::Printf(TEXT("RPC Client Thread %s %d"), *(GetClass()->GetName()), FMath::RandRange(0, TNumericLimits<int32>::Max())));
             Thread = FRunnableThread::Create(InnerWorker.Get(), *ThreadName);
 
             bCanSendRequests = true;
-            UE_LOG(LogTemp, Verbose, TEXT("Just made a thread: %s"), *ThreadName);
+            UE_LOG(LogTemp, Verbose, TEXT("Just made a thread: %s, address %lld"), *ThreadName, reinterpret_cast<int64>(InnerWorker.Get()));
         }
         else
         {
@@ -100,12 +100,6 @@ URpcClient::~URpcClient()
 {
     UE_LOG(LogTemp, Verbose, TEXT("An instance of RPC Client has been destroyed. Still can send requests: %s"),
            *UKismetStringLibrary::Conv_BoolToString(CanSendRequests()));
-
-    // Being called when GC'ed, should be called synchronously.
-	if (CanSendRequests())
-    {
-		Stop(true);
-    }
 }
 
 void URpcClient::Update()
@@ -149,23 +143,36 @@ URpcClient* URpcClient::CreateRpcClientUri(TSubclassOf<URpcClient> Class, const 
     }
 }
 
+void URpcClient::BeginDestroy()
+{
+    // Being called when GC'ed, should be called synchronously.
+    if (CanSendRequests())
+    {
+        Stop(true);
+    }
+
+    Super::BeginDestroy();
+}
+
 void URpcClient::Stop(bool bSynchronous)
 {
-    if (Thread)
+    FRunnableThread* ThreadToStop = Thread.Exchange(nullptr);
+
+    if (ThreadToStop)
     {
         if (!InnerWorker->IsPendingStopped())
             InnerWorker->MarkPendingStopped();
 
         bCanSendRequests = false;
-        UE_LOG(LogTemp, Verbose, TEXT("Scheduled to stop %s via setting 'bCanSendRequests = false'"), *(GetClass()->GetName()));
+        UE_LOG(LogTemp, Verbose, TEXT("Scheduled to stop %s via setting 'bCanSendRequests = false', address %lld"), *(GetClass()->GetName()), reinterpret_cast<int64>(InnerWorker.Get()));
 
         // Should be synchronous in (almost) any case
-        Thread->Kill(bSynchronous);
+        ThreadToStop->Kill(bSynchronous);
 
-        delete Thread;
-        Thread = nullptr;
-	    
-	FTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
+        delete ThreadToStop;
+        ThreadToStop = nullptr;
+        
+        FTicker::GetCoreTicker().RemoveTicker(TickDelegateHandle);
     }
     else
     {
