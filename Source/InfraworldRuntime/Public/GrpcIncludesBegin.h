@@ -24,6 +24,7 @@
 	#pragma warning (disable : 4577)// 'noexcept' used with no exception handling mode specified
 	#pragma warning (disable : 4946)// reinterpret_cast used between related classes
 	#pragma warning (disable : 4005)// 'TEXT': macro redefinition
+	#pragma warning (disable : 4800)// Implicit conversion from 'type' to bool. Possible information loss
 	#ifdef WINDOWS_PLATFORM_TYPES_GUARD
 		#pragma warning(push)
 		#include "Windows/HideWindowsPlatformTypes.h"
