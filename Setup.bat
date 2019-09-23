@@ -11,7 +11,7 @@ set GRPC_PROGRAMS_DIR= %SCRIPT_FOLDER%\GrpcPrograms\Win64
 set CMAKE_BUILD_DIR=%GRPC_ROOT%\.build
 
 set REMOTE_ORIGIN=https://github.com/grpc/grpc.git
-set BRANCH=v1.15.x
+set BRANCH=v1.23.x
 ::#####################################VARS#############################################################################
 
 :GET_UE_ROOT
