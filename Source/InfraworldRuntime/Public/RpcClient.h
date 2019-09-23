@@ -21,6 +21,7 @@
 
 #include "Containers/Queue.h"
 #include "Templates/SubclassOf.h"
+#include "Templates/Atomic.h"
 
 #include "RpcClientWorker.h"
 #include "ChannelCredentials.h"
@@ -129,11 +130,13 @@ protected:
     TUniquePtr<RpcClientWorker> InnerWorker;
 
 private:
+    virtual void BeginDestroy() override;
+
     /** Whether the RPC Client could send requests or not */
     bool bCanSendRequests = false;
 
     /** A thread, where RPC client worker will reside */
-    FRunnableThread* Thread = nullptr;
+    TAtomic<FRunnableThread*> Thread = nullptr;
 
     /** An accumulator for error messages */
     TQueue<FRpcError> ErrorMessageQueue;

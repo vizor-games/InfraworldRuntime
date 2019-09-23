@@ -26,6 +26,8 @@
 	#pragma warning (disable : 4005)// 'TEXT': macro redefinition
 	#pragma warning (disable : 4582)// constructor is not implicitly called
 	#pragma warning (disable : 4583)// destructor is not implicitly called
+	#pragma warning (disable : 4800)// Implicit conversion from 'type' to bool. Possible information loss
+
 	#ifdef WINDOWS_PLATFORM_TYPES_GUARD
 		#pragma warning(push)
 		#include "Windows/HideWindowsPlatformTypes.h"

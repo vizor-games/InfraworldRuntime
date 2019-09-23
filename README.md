@@ -48,7 +48,7 @@ Just run `Setup.sh` for Linux, `Setup.bat` for Windows or `Setup.command` for ma
 
 **Note** that required programs for Linux and MacOS systems are being checked in run-time.
 
-Then you may (or may not) import `GrpcIncludes` and `GrpcIncludes` folders into your VCS, but you need to build them manually at least one time for each platform.
+Then you may (or may not) import `GrpcIncludes` and `GrpcLibraries` folders into your VCS, but you need to build them manually at least one time for each platform.
 The build process requires an access to the Internet.
 
 ##### Installing the plugin
