@@ -24,7 +24,7 @@ Getting started
 ##### Building gRPC support
 
 At the first step, you need to build gRPC runtime libraries.
-Just run `Setup.sh` for Linux, `Setup.bat` for Windows or `Setup.command` for macOS (please don't use `Setup.sh` on macOS, because Linux and macOS build pipelines are completely different!). OR you may want to use our sweet [pre-compiled binaries](../../releases) to avoid manual building and save our planet from carbon emission disaster! The runtime uses gRPC branch `v1.15.x`.
+Just run `Setup.sh` for Linux, `Setup.bat` for Windows or `Setup.command` for macOS (please don't use `Setup.sh` on macOS, because Linux and macOS build pipelines are completely different!). OR you may want to use our sweet [pre-compiled binaries](../../releases) to avoid manual building and save our planet from carbon emission disaster! The runtime uses gRPC branch `v1.23.x`.
 
 * For Windows, we recommend you to use [chocolatey](https://chocolatey.org) to install packages into your system.
 **Note** that you do need all these programs in your system's `PATH` ([See how to edit PATH on Windows](https://www.computerhope.com/issues/ch000549.htm)):
@@ -40,7 +40,7 @@ Just run `Setup.sh` for Linux, `Setup.bat` for Windows or `Setup.command` for ma
   * make
   * strip
   * go
-  * [Unreal Engine 4.20 installed](https://github.com/EpicGames/UnrealEngine/tree/4.20), additionally you need to `export UE_ROOT=/path/to/root/ue4/directory`, because you need UE4 to build GRPC for linux.
+  * [Unreal Engine 4.22 installed](https://github.com/EpicGames/UnrealEngine/tree/4.22), additionally you need to `export UE_ROOT=/path/to/root/ue4/directory`, because you need UE4 to build GRPC for linux.
 * For macOS (use `homebrew` or `macports` to install this software):
   * git
   * xCode 10.0+
