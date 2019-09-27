@@ -64,9 +64,10 @@ Please take a look at the [example project](https://drive.google.com/open?id=13E
 Running the example project
 ===========================
 
-You should copy built plugin's folder into `InfraworldExample/Plugins` folder.
-Then just open `InfraworldExample.uproject`. Server code is in `InfraworldExample/Server` folder.
+You should copy built plugin's folder into `InfraworldRuntimeExample/Plugins` folder.
+Then just open `InfraworldDemo.uproject`. Server code is in `DemoServer` folder.
 You are required to install dependencies using `pip` and `requirements.txt` file.
+For more details please check our [**InfraworldExample**](https://github.com/vizor-games/InfraworldRuntimeExample) repository
 
 Debugging
 =========
