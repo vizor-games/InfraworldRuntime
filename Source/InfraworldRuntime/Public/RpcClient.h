@@ -136,7 +136,7 @@ private:
     bool bCanSendRequests = false;
 
     /** A thread, where RPC client worker will reside */
-    TAtomic<FRunnableThread*> Thread = nullptr;
+    TAtomic<FRunnableThread*> Thread = { nullptr };
 
     /** An accumulator for error messages */
     TQueue<FRpcError> ErrorMessageQueue;
