@@ -17,6 +17,8 @@
 
 #include "Modules/ModuleManager.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogInfraworldRuntime, Log, All);
+
 class FInfraworldRuntimeModule : public IModuleInterface
 {
 public:

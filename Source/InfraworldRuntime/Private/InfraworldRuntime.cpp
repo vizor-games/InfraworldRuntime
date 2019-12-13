@@ -15,6 +15,8 @@
  */
 #include "InfraworldRuntime.h"
 
+DEFINE_LOG_CATEGORY(LogInfraworldRuntime);
+
 #define LOCTEXT_NAMESPACE "FInfraworldRuntimeModule"
 
 void FInfraworldRuntimeModule::StartupModule()

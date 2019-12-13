@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2018 Vizor Games LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,110 +22,114 @@
 #include "RpcClientWorker.h"
 #include "ChannelCredentials.h"
 
-
 namespace channel
 {
-    FORCEINLINE bool WaitUntilChannelIsReady(const std::shared_ptr<grpc::Channel>& Channel, std::chrono::system_clock::time_point Deadline)
-    {
-        grpc_connectivity_state State = Channel->GetState(true);
+	FORCEINLINE bool WaitUntilChannelIsReady(const std::shared_ptr<grpc::Channel>& Channel, std::chrono::system_clock::time_point Deadline)
+	{
+		grpc_connectivity_state State = Channel->GetState(true);
 
-        while (State != GRPC_CHANNEL_READY)
-        {
-            if (!Channel->WaitForStateChange(State, Deadline))
-                return false;
+		while (State != GRPC_CHANNEL_READY)
+		{
+			if (!Channel->WaitForStateChange(State, Deadline))
+				return false;
 
-            State = Channel->GetState(true);
-        }
+			State = Channel->GetState(true);
+		}
 
-        return true;
-    }
+		return true;
+	}
 
 	FORCEINLINE bool WaitForConnection(float Seconds, const std::shared_ptr<grpc::Channel>& Channel)
-    {
-        bool IsConnected = false;
+	{
+		bool IsConnected = false;
 
-        const int64 Milliseconds = (int64)((double)Seconds * 1000.0);
+		const int64 Milliseconds = (int64)((double) Seconds * 1000.0);
 
-        std::chrono::system_clock::time_point start_tp = std::chrono::system_clock::now();
-        std::chrono::system_clock::time_point end_tp = std::chrono::system_clock::now() + std::chrono::milliseconds(Milliseconds);
+		std::chrono::system_clock::time_point start_tp = std::chrono::system_clock::now();
+		std::chrono::system_clock::time_point end_tp = std::chrono::system_clock::now() + std::chrono::milliseconds(Milliseconds);
 
-        std::chrono::system_clock::time_point current_tp = start_tp;
+		std::chrono::system_clock::time_point current_tp = start_tp;
 
-        while (!IsConnected)
-        {
-            std::chrono::system_clock::time_point delta_tp = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
+		while (!IsConnected)
+		{
+			std::chrono::system_clock::time_point delta_tp = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
 
-            if (current_tp < end_tp)
-                IsConnected = WaitUntilChannelIsReady(Channel, delta_tp);
-            else
-                break;
+			if (current_tp < end_tp)
+				IsConnected = WaitUntilChannelIsReady(Channel, delta_tp);
+			else
+				break;
 
-            current_tp = std::chrono::system_clock::now();
-        }
+			current_tp = std::chrono::system_clock::now();
+		}
 
-        return IsConnected;
-    }
+		return IsConnected;
+	}
 
 	FORCEINLINE std::shared_ptr<grpc::ChannelCredentials> GetGrpcCredentials(UChannelCredentials* const Credentials)
-    {
-        // Check whether provided credentails are null.
-        if (!Credentials)
-        {
-            UE_LOG(LogTemp, Error, TEXT("Provided credentials are NULL. (Did you forget to pass ChannelCredentials to instantiation parameters?). Replacement is grpc::InsecureChannelCredentials()."));
-            return grpc::InsecureChannelCredentials();
-        }
+	{
+		// Check whether provided credentails are null.
+		if (!Credentials)
+		{
+			UE_LOG(LogTemp, Error,
+				TEXT("Provided credentials are NULL. (Did you forget to pass ChannelCredentials to instantiation parameters?). Replacement is "
+					 "grpc::InsecureChannelCredentials()."));
+			return grpc::InsecureChannelCredentials();
+		}
 
-        // Classify the credentials
-        if (Credentials->IsA<UGoogleDefaultCredentials>())
-        {
-            return grpc::GoogleDefaultCredentials();
-        }
-        else if (Credentials->IsA<UInsecureChannelCredentials>())
-        {
-            return grpc::InsecureChannelCredentials();
-        }
-        else if (const USslCredentials* const SslCredentials = Cast<USslCredentials>(Credentials))
-        {
-            grpc::SslCredentialsOptions Options;
+		// Classify the credentials
+		if (Credentials->IsA<UGoogleDefaultCredentials>())
+		{
+			return grpc::GoogleDefaultCredentials();
+		}
+		else if (Credentials->IsA<UInsecureChannelCredentials>())
+		{
+			return grpc::InsecureChannelCredentials();
+		}
+		else if (const USslCredentials* const SslCredentials = Cast<USslCredentials>(Credentials))
+		{
+			grpc::SslCredentialsOptions Options;
 
-            if (SslCredentials->PemRootCerts.Len() > 0)
-                Options.pem_root_certs = TCHAR_TO_ANSI(*(SslCredentials->PemRootCerts));
-            if (SslCredentials->PemPrivateKey.Len() > 0)
-                Options.pem_private_key = TCHAR_TO_ANSI(*(SslCredentials->PemPrivateKey));
-            if (SslCredentials->PemCertChain.Len() > 0)
-                Options.pem_cert_chain = TCHAR_TO_ANSI(*(SslCredentials->PemCertChain));
+			if (SslCredentials->PemRootCerts.Len() > 0)
+				Options.pem_root_certs = TCHAR_TO_ANSI(*(SslCredentials->PemRootCerts));
+			if (SslCredentials->PemPrivateKey.Len() > 0)
+				Options.pem_private_key = TCHAR_TO_ANSI(*(SslCredentials->PemPrivateKey));
+			if (SslCredentials->PemCertChain.Len() > 0)
+				Options.pem_cert_chain = TCHAR_TO_ANSI(*(SslCredentials->PemCertChain));
 
-            return grpc::SslCredentials(Options);
-        }
+			return grpc::SslCredentials(Options);
+		}
 
-        // Unknown credentials
-        UE_LOG(LogTemp, Error, TEXT("Don't know how to process credentials:'%s'. Replacement is grpc::InsecureChannelCredentials()."), *(Credentials->GetClass()->GetName()));
-        return grpc::InsecureChannelCredentials();
-    }
+		// Unknown credentials
+		UE_LOG(LogTemp, Error, TEXT("Don't know how to process credentials:'%s'. Replacement is grpc::InsecureChannelCredentials()."),
+			*(Credentials->GetClass()->GetName()));
+		return grpc::InsecureChannelCredentials();
+	}
 
 	FORCEINLINE std::shared_ptr<grpc::Channel> CreateChannel(RpcClientWorker* Worker)
-    {
-        UChannelCredentials* const ChannelCredentials = Worker->ChannelCredentials;
-        UE_CLOG(!ChannelCredentials, LogTemp, Fatal, TEXT("Channel Credentials mustn't be null"));
+	{
+		UChannelCredentials* const ChannelCredentials = Worker->ChannelCredentials;
+		UE_CLOG(!ChannelCredentials, LogTemp, Fatal, TEXT("Channel Credentials mustn't be null"));
 
-        const FString& URI = Worker->URI;
-        UE_LOG(LogTemp, Display, TEXT("The following Channel Credentials is used: \"%s\". Connecting to: \"%s\""), *(ChannelCredentials->GetName()), *URI);
+		const FString& URI = Worker->URI;
+		UE_LOG(LogTemp, Display, TEXT("The following Channel Credentials is used: \"%s\". Connecting to: \"%s\""), *(ChannelCredentials->GetName()), *URI);
 
-        std::shared_ptr<grpc::ChannelCredentials> GrpcCredentials = GetGrpcCredentials(ChannelCredentials);
-        std::shared_ptr<grpc::Channel> Channel = grpc::CreateChannel(TCHAR_TO_ANSI(*URI), GrpcCredentials);
+		std::shared_ptr<grpc::ChannelCredentials> GrpcCredentials = GetGrpcCredentials(ChannelCredentials);
+		std::shared_ptr<grpc::Channel> Channel = grpc::CreateChannel(TCHAR_TO_ANSI(*URI), GrpcCredentials);
 
-        bool bConnectionWasSuccessful = WaitForConnection(3, Channel);
+		bool bConnectionWasSuccessful = WaitForConnection(3, Channel);
 
-        if (!bConnectionWasSuccessful)
-        {
-            Worker->DispatchError(TEXT("Connection failure"));
-            return std::shared_ptr<grpc::Channel>(nullptr);
-        }
-        else
-        {
-            UE_LOG(LogTemp, Verbose, TEXT("Connection established!"));
-        }
+		if (!bConnectionWasSuccessful)
+		{
+			Worker->DispatchError(
+				NSLOCTEXT("InfraworldChannelProvider", "InfraworldChannelProviderGrpcServiceConnectionError", "Service connection failure!").ToString());
+			return std::shared_ptr<grpc::Channel>(nullptr);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Verbose, TEXT("%s"),
+				*NSLOCTEXT("InfraworldChannelProvider", "InfraworldChannelProviderGrpcServiceConnectionSuccess", "Service connection established!").ToString());
+		}
 
-        return Channel;
-    }
-}
+		return Channel;
+	}
+}	

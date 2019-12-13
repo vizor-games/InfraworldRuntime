@@ -26,11 +26,11 @@
 #include <grpc++/create_channel.h>
 
 #include "GrpcIncludesEnd.h"
-
+#include "WorkerUtils.h"
 
 // ========= RpcClientWorker implementation ========
 
-RpcClientWorker::RpcClientWorker() : bPendingStopped(false)
+RpcClientWorker::RpcClientWorker() : WorkerState(ERpcWorkerState::PendingInitialization)
 {
 }
 
@@ -41,26 +41,43 @@ RpcClientWorker::~RpcClientWorker()
 uint32 RpcClientWorker::Run()
 {
     // If channel has not been created - we set bPendingStopped = true to StopBackground.
+	if (!ensureAlways(WorkerState.Exchange(ERpcWorkerState::Initializing) == ERpcWorkerState::PendingInitialization))
+	{
+		return 2;
+	}
+	
     if (HierarchicalInit())
-        bPendingStopped = false;
+	{
+        UE_LOG(LogInfraworldRuntime, Log, TEXT("Finished initialization via HierarchicalInit!"));
+
+		ERpcWorkerState ExpectedState = ERpcWorkerState::Initializing;
+
+    	// this will set WorkerState to Working only if no one overwrote it from Initializing
+    	if (!WorkerState.CompareExchange(ExpectedState, ERpcWorkerState::Working))
+    	{
+			UE_LOG(LogInfraworldRuntime, Log, TEXT("Worker already marked pending stopped. Its state is %d"), static_cast<int>(ExpectedState));
+    	}
+	}
     else
         return 1;
 
     // Update until not pending stopped
-    while (!bPendingStopped)
+    while (WorkerState == ERpcWorkerState::Working)
     {
-        UE_LOG(LogTemp, Verbose, TEXT("Updating via HierarchicalUpdate()"));
+        UE_LOG(LogInfraworldRuntime, Verbose, TEXT("Updating via HierarchicalUpdate()"));
 
         HierarchicalUpdate();
         FPlatformProcess::Sleep(0.1f);
     }
+
+	WorkerState.Exchange(ERpcWorkerState::Shutdown);
 
     return 0;
 }
 
 void RpcClientWorker::DispatchError(const FString& ErrorMessage)
 {
-    UE_CLOG(!ErrorMessageQueue, LogTemp, Fatal, TEXT("Can not dispatch an error message, because ErrorMessageQueue is null"));
+    UE_CLOG(!ErrorMessageQueue, LogInfraworldRuntime, Fatal, TEXT("Can not dispatch an error message, because ErrorMessageQueue is null"));
 
     FRpcError Error;
     Error.ErrorMessage = ErrorMessage;
