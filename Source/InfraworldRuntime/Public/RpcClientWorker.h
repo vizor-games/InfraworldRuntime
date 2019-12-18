@@ -20,14 +20,22 @@
 #include "Containers/Queue.h"
 #include "ChannelCredentials.h"
 #include "HAL/Runnable.h"
-
+#include "InfraworldRuntime.h"
 #include <memory>
 #include <chrono>
 
-//namespace grpc
-//{
-//    class Channel;
-//}
+#include "Templates/Atomic.h"
+
+enum class ERpcWorkerState : uint8
+{
+	PendingInitialization,
+	Initializing,
+	Working,
+	PendingShutdown,
+	Shutdown
+};
+
+class FGenAsyncRequest;
 
 /**
  * Base RPC Client Worker, it 'lives' in a separate thread and updates all conduits with responses.
@@ -42,14 +50,19 @@ public:
 
     FORCEINLINE bool IsPendingStopped() const
     {
-        return bPendingStopped;
+        return WorkerState.Load() == ERpcWorkerState::PendingShutdown;
     }
 
     FORCEINLINE void MarkPendingStopped()
     {
-        bPendingStopped = true;
+		UE_LOG(LogInfraworldRuntime, Log, TEXT("RpcClientWorker at [%p] Marking pending stopped"), this);
+		const ERpcWorkerState PreviousWorkerState = WorkerState.Exchange(ERpcWorkerState::PendingShutdown);
+		static const TSet<ERpcWorkerState> ExpectedWorkerStates = {
+			ERpcWorkerState::PendingInitialization, ERpcWorkerState::Initializing, ERpcWorkerState::Working
+		};
+		ensureAlways(ExpectedWorkerStates.Contains(PreviousWorkerState));    
     }
-
+	
     virtual bool HierarchicalInit() = 0;
 	virtual void HierarchicalUpdate() = 0;
 
@@ -60,8 +73,7 @@ public:
     UChannelCredentials* ChannelCredentials;
 
     TQueue<FRpcError>* ErrorMessageQueue;
-
+	
 protected:
-    // False by default. Being set to true when the thread is need to be shut down.
-	volatile bool bPendingStopped;
+	TAtomic<ERpcWorkerState> WorkerState;
 };
